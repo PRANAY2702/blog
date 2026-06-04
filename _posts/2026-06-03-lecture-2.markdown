@@ -1,0 +1,109 @@
+---
+layout: post
+title:  "Lecture 1: Course Overview + Introduction to the Shell "
+date:   2026-06-02 15:32:00 +0530
+categories: shell commands , bash , overview
+tags: [shell, bash, scripting, linux, interview]
+---
+
+# Q1: For this course, you need to be using a Unix shell like Bash or ZSH. If you are on Linux or macOS, you don’t have to do anything special. If you are on Windows, you need to make sure you are not running cmd.exe or PowerShell; you can use [Windows Subsystem](https://learn.microsoft.com/en-us/windows/wsl/install) for Linux or a Linux virtual machine to use Unix-style command-line tools. To make sure you’re running an appropriate shell, you can try the command ```echo $SHELL```. If it says something like ```/bin/bash``` or ```/usr/bin/zsh```, that means you’re running the right program.
+
+**Answer:**
+
+- To install in Linux :-
+1) Open The Terminal 
+2) run the command "sudo apt update"
+3) then run the command "sudo apt install vim"
+4) to verify run "vim --version"
+5) You can open it by running "vim [your_filename]"
+
+
+- To install it in VSCode :-
+1) Open VSCode 
+2) Go to the Extensions and Search Vim
+3) Install it and Vim will be applied Automatically 
+
+- To install in Antigravity :-
+1) Open Antigravity
+2) Go to the Extensions and Search Vim
+3) Install it and Vim will run Automatically 
+
+---
+
+## Q2 : Complete a challenge from [VimGolf](https://www.vimgolf.com/en/).
+
+**Answer:**
+
+In Vim Golf I completed a challenge which was :
+[problem](https://www.vimgolf.com/challenges/9v0069dd19600000000007c9)
+
+**Given Code**
+
+```python
+# caculate area
+def calculate_area(width, height): # width, height
+    return width * height # return area
+
+area1 = calculate_area(5, 10)
+area2 = calculate_area(8, 12)
+
+
+```
+**After Modification**
+
+```python
+def calculate_area(height, width):
+    return width * height
+
+area1 = calculate_area(5, 10)
+area2 = calculate_area(8, 12)
+```
+**Keys Used**
+```
+<Esc>:%s/\v(\w+)\(([^,]+),\s*([^)]*)\)/\1(\3, \2)/g<CR>
+<Esc>:%s/#.*$//<CR>
+```
+
+
+---
+
+## Q3: Configure an IDE extension and language server for a project that you’re working on. Ensure that all the expected functionality, such as jump-to-definition for library dependencies, works as expected. If you don’t have code that you can use for this exercise, you can use some open-source project from GitHub (such as this [one](https://github.com/facebook/react)).
+
+**Answer:**
+
+Considering this git repository :- 
+[github](https://github.com/pranay2702/P-FnO-Frontend)
+
+Extensions Used :- 
+    C++ By Microsoft
+    Python By Microsoft
+    C/C++ Extension Pack by Microsoft
+    Better C++ Syntax Highlighting by ms-vscode
+    JavaScript with Prettier by Esben Petersen
+    
+FrameWorks Used :- 
+    React
+    WebSocket
+    Tailwind CSS
+           
+
+
+---
+
+## Q4: Browse a list of IDE extensions and install one that seems useful to you.
+
+**Answer:**
+
+    Some Extensions I found Useful
+        -   AI Coding Assistant
+        -   GitHub Copilot
+        -   IntelliCode
+        -   Code Runner
+        -   Better C++ Syntax Highlighting
+        -   JavaScript with Prettier
+        -   CSS Peek
+        -   ESLint
+        -   Live Server
+        -   Prettier - Code formatter
+
+---
