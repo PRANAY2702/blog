@@ -4,15 +4,12 @@ title: About
 permalink: /about/
 ---
 
-This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](https://jekyllrb.com/)
-
-You can find the source code for Minima at GitHub:
-[jekyll][jekyll-organization] /
-[minima](https://github.com/jekyll/minima)
-
-You can find the source code for Jekyll at GitHub:
-[jekyll][jekyll-organization] /
-[jekyll](https://github.com/jekyll/jekyll)
+## Hi everyone, I'm Pranay Mehta pursuing my Bachelor of Technology in the field of Mathematics and Computing in 3rd year from Punjab Engineering College, Chandigarh.<br>
+**My Leetcode profile is :- <br>**
+[LeetCode](https://leetcode.com/u/pranaymehta/)<br>
+**My Codechef profile is :- <br>**
+[Codechef](https://www.codechef.com/users/pranaymehta)<br>
+**My Linkedin profile is :- <br>**
+[Linkedin](https://www.linkedin.com/in/pranay-m-258473339/)<br>
 
 
-[jekyll-organization]: https://github.com/jekyll

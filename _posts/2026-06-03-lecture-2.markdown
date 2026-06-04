@@ -1,586 +1,525 @@
 ---
 layout: post
-title:  "Lecture 1: Course Overview + Introduction to the Shell "
-date:   2026-06-02 15:32:00 +0530
+title:  "Lecture 2: Command-line Environment"
+date:   2026-06-03 16:01:50 +0530
 categories: shell commands , bash , overview
 tags: [shell, bash, scripting, linux, interview]
 ---
 
-For Notes and Videos Checkout :- [`https://missing.csail.mit.edu/2026/course-shell/`](https://missing.csail.mit.edu/2026/course-shell/)
+For Notes and Videos Checkout :- [`https://missing.csail.mit.edu/2026/command-line-environment/`](https://missing.csail.mit.edu/2026/command-line-environment/)<br>
+
+---
+## ARGUEMENTS AND GLOBS :-
 
 ---
 
-#### **Q1: For this course, you need to be using a Unix shell like Bash or ZSH. If you are on Linux or macOS, you don’t have to do anything special. If you are on Windows, you need to make sure you are not running cmd.exe or PowerShell; you can use [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) or a Linux virtual machine to use Unix-style command-line tools. To make sure you’re running an appropriate shell, you can try the command ```echo $SHELL```. If it says something like ```/bin/bash``` or ```/usr/bin/zsh```, that means you’re running the right program.**
+#### **Q1. You might see commands like `cmd --flag -- --notaflag`. The `--` is a special argument that tells the program to stop parsing flags. Everything after `--` is treated as a positional argument. Why might this be useful? Try running `touch -- -myfile` and then removing it without `--`.**
 
-**Answer:**
-Code :- 
+**Answer :-**
+```bash
+touch -- -myfile
+rm ./-myfile
+```
+The `--` is used to tell the `touch` command that everything after it is a file name, not an option.
 
-```
-echo $SHELL 
-```
-Output :- 
-```
-/bin/bash
+**Output**:-
+```bash
+-rw-r--r--   1 rdmehta5608 rdmehta5608      0 Jun  4 16:45 -myfile
 ```
 
 ---
 
-#### **Q2: What does the `-l` flag to `ls` do? Run `ls -l /` and examine the output. What do the first 10 characters of each line mean? (Hint: `man ls`)?**
-
-**Answer:**
-
-Code :- 
-
-```
-ls -l /
-```
-Output :- 
-
-```
-total 52
-drwxr-xr-x  2 root root  4096 Jun  1 18:43 bin
-drwxr-xr-x  3 root root  4096 Apr  1 07:43 boot
-drwxr-xr-x  4 root root   400 Jun  4 02:03 dev
-drwxr-xr-x 57 root root 12288 Jun  1 16:40 etc
-drwxr-xr-x  2 root root  4096 Apr  1 07:35 home
-drwxr-xr-x 10 root root  4096 Jun  3 20:05 lib
-drwxr-xr-x  2 root root  4096 Apr  1 07:35 lib32
-drwxr-xr-x  2 root root  4096 Apr  1 07:35 lib64
-drwxr-xr-x  2 root root  4096 Apr  1 07:35 libx32
-dr-xr-xr-x 10 root root  4096 Jun  4 02:06 media
-dr-xr-xr-x  2 root root  4096 Jun  2 21:22 mnt
-drwxr-xr-x  2 root root  4096 Apr  1 07:35 opt
-dr-xr-xr-x 215 root root     0 Jun  4 02:03 proc
-drwxr-x---  7 root root  4096 Jun  3 17:00 root
-drwxr-xr-x 37 root root  1024 Jun  3 19:26 run
-drwxr-xr-x  2 root root  4096 Apr  1 07:43 sbin
-dr-xr-xr-x  2 root root  4096 Jun  2 21:23 srv
-dr-xr-xr-x 13 root root     0 Jun  4 02:03 sys
-drwxrwxrwt 13 root root  4096 Jun  4 03:00 tmp
-drwxr-xr-x 14 root root  4096 Jun  1 07:43 usr
-drwxr-xr-x 13 root root  4096 Jun  1 07:43 var
-```
-**Explanation :-**
-    - The first 10 characters of each line represent the permissions of the file.
-    - The first character represents the type of the file.
-    - The next 9 characters represent the permissions of the file.
-    - The next 3 characters represent the permissions of the group.
-    - The next 3 characters represent the permissions of the others.
-
-
-
----
-
-#### **Q3: In the command `find ~/Downloads -type f -name "*.zip" -mtime +30`, the `*.zip` is a “glob”. What is a glob? Create a test directory with some files and experiment with patterns like `ls *.txt`, `ls file?.txt`, and `ls {a,b,c}.txt`. See [Pattern Matching](https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html) in the Bash manual.**
-
-**Answer:**
-
-Globs are patterns that are used to match file names. They are used by the shell to find files that match the pattern.
-
-Make a Folder named sample-files and inside it create files
-`a.txt`, `b.txt`, `c.txt`, `file1.txt` , `file2.txt` , `file10.txt` 
-
-**Code** :- 
-
-```
-cd sample-file ;
-ls *.txt;
-ls file?.txt ;
-ls {a,b,c}.txt ;
-```
-Output :- 
-
-```
-a.txt b.txt c.txt file1.txt file2.txt file10.txt
-file1.txt file2.txt 
-a.txt b.txt c.txt
-```
-**Explanation** :- 
-
-    - `*.txt` :- This will match all the files that have a `.txt` extension.
-    - `file?.txt` :- This will match all the files that have a `.txt` extension and a single character before the `.txt` extension.
-    - `{a,b,c}.txt` :- This will match all the files that have a `.txt` extension and a single character which is either a, b, or c before the `.txt` extension.
-           
-
-
----
-
-#### **Q4: What’s the difference between `'single quotes'`, `"double quotes"`, and `$'ANSI quotes'`? Write a command that echoes a string containing a literal $, a !, and a newline character. See [Quoting](https://www.gnu.org/software/bash/manual/html_node/Quoting.html).**
-
-**Answer:**
-
-**Single quotes** :- 
-
-    `'` :- It is used to prevent the shell from interpreting any special characters. It is used to create a literal string.
-    
-**Double quotes** :- 
-
-    `"` :- It is used to prevent the shell from interpreting any special characters except for `\`, `` ` ``, `$`, and `\n`. It is used to create a literal string.
-    
-**ANSI quotes** :- 
-
-    `$\` :- It is used to prevent the shell from interpreting any special characters except for `\`, `` ` ``, `$`, and `\n`. It is used to create a literal string.
-
-**Code** :-
+#### **Q2Read [`man ls`](https://www.man7.org/linux/man-pages/man1/ls.1.html) and write an `ls` command that lists files in the following manner:<br>Includes all files, including hidden files<br>Sizes are listed in human readable format (e.g. 454M instead of 454279954)<br>Files are ordered by recency<br>Output is colorized<br>A sample output would look like this:**
 
 ```bash
-echo '$PATH' ;
-echo "$PATH" ;
-echo $'dollar : $\nexclaimation mark : !' ;
-```
-Output :-
+ -rw-r--r--   1 user group 1.1M Jan 14 09:53 baz
+ drwxr-xr-x   5 user group  160 Jan 14 09:53 .
+ -rw-r--r--   1 user group  514 Jan 14 06:42 bar
+ -rw-r--r--   1 user group 106M Jan 13 12:12 foo
+ drwx------+ 47 user group 1.5K Jan 12 18:08 ..
+ ```
 
-```
-$PATH
-/home/pranay
-dollar : $
-exclaimation mark : !
-```
-
----
-
-
-#### **Q5: The shell has three standard streams: stdin (0), stdout (1), and stderr (2). Run `ls /nonexistent /tmp` and redirect stdout to one file and stderr to another. How would you redirect both to the same file? See [Redirections](https://www.gnu.org/software/bash/manual/html_node/Redirection-Examples.html).**
-
-**Answer:**
-**Code** :-
-
+ **Answer :-**
 ```bash
-ls /nonexistent /tmp > file.txt 2> error.txt
-ls /nonexistent /tmp > file.txt 2>&1
+ls ~/ -l -a -s -h -t --color=auto 
 ```
-Output :- 
-
-Two files, out.txt and error.txt is created in the current directory from the first line of code, error.txt contains error
-and out.txt contains the output without the error.
-
-
-Second line of code will create a single file all.txt and put both output and error in it 
-
----
-
-#### **Q6: `$?` holds the exit status of the last command (0 = success). `&&` runs the next command only if the previous succeeded; `||` runs it only if the previous failed. Write a one-liner that creates `/tmp/mydir` only if it doesn’t already exist. See [Exit Status](https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html).**
-
-**Answer:**
-
+**Output**:- 
 ```bash
-[ ! -d ~/missing-sem/my-dir ] && mkdir ~/missing-sem/my-dir ; 
+total 1.3M
+4.0K drwxr-xr-x 6 rdmehta5608 rdmehta5608 4.0K Jun  4 13:53  myblog
+4.0K drwxr-xr-x 6 rdmehta5608 rdmehta5608 4.0K Jun  4 11:06  lecture
+4.0K drwxr-xr-x 8 rdmehta5608 rdmehta5608 4.0K Jun  3 14:52 'missing-sem - LECTURE 2'
+4.0K -rw-r--r-- 1 rdmehta5608 rdmehta5608  104 Jun  3 09:50  notes.txt
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:45  file_2026-06-02.txt
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:45  s.s
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:44  file_.txt
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:44  file_
+4.0K -rwxr-xr-x 1 rdmehta5608 rdmehta5608   98 Jun  2 12:41  s.sh
+4.0K -rwxr-xr-x 1 rdmehta5608 rdmehta5608   98 Jun  2 12:39  script.sh
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:14  file1.txt
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:14  file2.txt
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:14  file3.txt
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:13  b.txt
+   0 -rw-r--r-- 1 rdmehta5608 rdmehta5608    0 Jun  2 12:13  c.txt
+4.0K -rw-r--r-- 1 rdmehta5608 rdmehta5608    1 Jun  2 12:13  a.txt
+4.0K drwxr-xr-x 2 rdmehta5608 rdmehta5608 4.0K Jun  2 12:13  test
+4.0K drwxr-xr-x 2 rdmehta5608 rdmehta5608 4.0K Apr 16 08:58 'assingment 4'
+4.0K drwxr-xr-x 2 rdmehta5608 rdmehta5608 4.0K Mar 24 14:55  assignment3
+4.0K drwxr-xr-x 2 rdmehta5608 rdmehta5608 4.0K Mar 17 14:31 'assignment 1'
+4.0K drwxr-xr-x 2 rdmehta5608 rdmehta5608 4.0K Feb 17 14:21  assignment2
+4.0K -rwxr-xr-x 1 rdmehta5608 rdmehta5608  201 Feb 10 15:38  linux.sh
+4.0K -rw-r--r-- 1 root        root         292 Jan 27 15:19  numbers.txt
+4.0K -rw-r--r-- 1 root        root          60 Jan 27 15:05  pranay.txt
+4.0K drwxr-xr-x 5 root        root        4.0K Jan 27 14:56  GitTool
+4.0K -rw-r--r-- 1 root        root           7 Jan 27 14:47  test.txt
+4.0K drwxr-xr-x 4 root        root        4.0K Jan 27 14:30  exaPhisher
+4.0K drwxr-xr-x 4 root        root        4.0K Jan 25 15:56  Wifi-Hacking
+4.0K -rw-r--r-- 1 rdmehta5608 rdmehta5608    1 Jan 24 19:27  hello.py
+4.0K drwxr-xr-x 9 root        root        4.0K Jan 23 18:37  SocialMediaHackingToolkit
+4.0K drwxr-xr-x 4 root        root        4.0K Jan 23 17:43  katoolin
+1.2M -rw-r--r-- 1 rdmehta5608 rdmehta5608 1.2M Jan 20 04:18  bison_2%3a3.8.2+dfsg-1+b3_amd64.deb
 ```
-
 
 **Explanation** :- 
 
-    - `mkdir` :- It is used to create a directory.
-    - `&&` :- It is used to run the next command only if the previous command succeeded.
-    - `!` :- It is used to negate the result of the previous command.
-    - `-d` :- It is used to check if the file is a directory.
+    - `-l` :- It is used to list the files in long format. 
+    - `-a` :- It is used to list all the files, including hidden files.
+    - `-s` :- It is used to list the files in sorted order.
+    - `-h` :- It is used to list the files in human readable format.
+    - `-t` :- It is used to list the files in order of modification time.
+    - `--color=auto` :- It is used to colorize the output.
 
 ---
 
-#### **Q7: Why does `cd` have to be built into the shell itself rather than a standalone program? (Hint: think about what a child process can and cannot affect in its parent.)**
+#### **Q3.Process substitution `<(command)` lets you use a command’s output as if it were a file. Use `diff`with process substitution to compare the output of `printenv` and `export`. Why are they different? (Hint: try diff `<(printenv | sort) <(export | sort)`). **
 
-**Answer:**
-    `cd` have to be a built in shell because it have to change the current directory of the parent process. If it was a standalone program, it would only change the current directory of the child process, which would not affect the parent process. 
+**Answer :-**
 
+**Explanation** :- 
+
+    - The `diff` command is used to compare two files and find the differences between them. 
+    - The `<(command)` syntax is used to create a temporary file with the output of the command. 
+    - The `printenv` command prints all the environment variables, while the `export` command prints all the exported environment variables. 
+    - The differences between the two are due to the fact that some environment variables are not exported. 
 
 ---
 
-#### **Q8: Write a script that takes a filename as an argument (`$1`) and checks whether the file exists using `test -f` or `[ -f ... ]`. It should print different messages depending on whether the file exists. See [Bash Conditional Expressions](https://www.gnu.org/software/bash/manual/html_node/Conditional-Expressions.html).**
 
-**Answer:**
-**Code** :- 
+## ENVIRONMENT VARIABLES :-
 
+---
+
+#### **Q1. Write bash functions `marco` and `polo` that do the following: whenever you execute `marco` the current working directory should be saved in some manner, then when you execute `polo`, no matter what directory you are in, `polo` should cd you back to the directory where you executed `marco`. For ease of debugging you can write the code in a file `marco.sh` and (re)load the definitions to your shell by executing `source marco.sh`.**
+
+**Answer :-**
 
 ```bash
-if [ -f "$1" ]; then  
-echo "File exists!" ;
- else 
-echo "File does not exists" ;
+marco() {
+    export MAR_DIR={$PWD} ;
+}
+polo(){
+    if [ -z "$MAR_DIR" ];
+    then
+    echo "Not executed" ;
+    fi 
+    cd $MAR_DIR ;
+}
+```
+
+**Explanation** :- 
+
+    - `export MAR_DIR={$PWD}` :- This will export the current working directory to the environment variable `MAR_DIR`. 
+    - `if [ -z "$MAR_DIR" ] ; then echo "Not executed" ; fi` :- This will check if the environment variable `MAR_DIR` is empty. If it is empty, it will print "Not executed".
+    - `cd $MAR_DIR` :- This will change the current working directory to the value of the environment variable `MAR_DIR`. 
+
+---
+
+## RETURN CODES
+
+---
+
+#### **Q1. Say you have a command that fails rarely. In order to debug it you need to capture its output but it can be time consuming to get a failure run. Write a bash script that runs the following script until it fails and captures its standard output and error streams to files and prints everything at the end. Bonus points if you can also report how many runs it took for the script to fail.**
+```bash
+ #!/usr/bin/env bash
+
+ n=$(( RANDOM % 100 ))
+
+ if [[ n -eq 42 ]]; then
+    echo "Something went wrong"
+    >&2 echo "The error was using magic numbers"
+    exit 1
+ fi
+
+ echo "Everything went according to plan"
+ ```
+
+**Answer :-**
+
+```bash
+  count=0 ; 
+while true 
+do
+count=$((count + 1)) ;
+./command.sh>output.txt 2>error.txt
+status=$? ;
+if [$status -ne 0] ;
+then
+echo "Script failed after $count" ;
 fi
+echo "===========OUTPUT===============" ;
+cat output.txt ;
+
+echo "===========ERROR================" ;
+cat error.txt ;
+break ;
+done
+
+  
 ```
 
 **Explanation** :- 
 
-    - `-f` :- It is used to check if the file exists.
-    - `&&` :- It is used to run the next command only if the previous command succeeded.
-    - `||` :- It is used to run the next command only if the previous command failed.
-    
----
-
-#### **Q9: Save the script from the previous exercise to a file (e.g., `check.sh`). Try running it with `./check.sh somefile`. What happens? Now run `chmod +x check.sh` and try again. Why is this step necessary? (Hint: look at `ls -l check.sh` before and after the `chmod`.)**
-
-**Answer:**
-**Code** :- 
-
-```bash
-touch check.sh ;
-cp check.sh sample.sh ;
-ls -l sample.sh ;
-chmod +x sample.sh ;
-ls -l sample.sh
-```
-Output
-```
--rw-r--r-- 1 root root 0 June 4 15:59 sample.sh
--rwxr-xr-x 1 root root 0 June 4 15:59 sample.sh
-```
-**Explanation** :- 
-
-    - `chmod +x` :- It is used to give execute permission to the file.
-    - `ls -l` :- It is used to list the files in long format.
-
+    - `count=0` :- Initialize a counter to 0.
+    - `while true` :- Start a loop that will continue until it is broken.
+    - `count=$((count + 1))` :- Increment the counter.
+    - `./command.sh>output.txt 2>error.txt` :- Run the command and redirect its output to a file named output.txt and its error to a file named error.txt.
+    - `status=$?` :- Get the exit status of the command.
+    - `if [$status -ne 0] ; then echo "Script failed after $count" ; fi` :- If the exit status is not 0, print the number of runs it took for the script to fail.
+    - `echo "===========OUTPUT================"` :- Print "===========OUTPUT================".
+    - `cat output.txt` :- Print the output of the command.
+    - `echo "===========ERROR================"` :- Print "===========ERROR================".
+    - `cat error.txt` :- Print the error of the command.
+    - `break` :- Break the loop.
 
 ---
 
-#### **Q10: What happens if you add `-x` to the `set` flags in a script? Try it with a simple script and observe the output. See [The Set Builtin](https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html).**
+## SIGNALS AND JOB CONTROL
 
-**Answer:**
-**Code** :- 
+#### **Q1. Start a `sleep 10000` job in a terminal, background it with `Ctrl-Z` and continue its execution with `bg`. Now use [`pgrep`](https://man7.org/linux/man-pages/man1/pgrep.1.html) to find its pid and [`pkill`](https://man7.org/linux/man-pages/man1/pkill.1.html) to kill it without ever typing the pid itself. (Hint: use the `-af` flags).**
+
+**Answer :-**
 
 ```bash
-set -x ;
-echo "My name is Pranay Mehta " ;
-ls ;
-cd my-dir ;
-cd xyz ;
-```
-Output
-```
-+ set -x
-+ echo 'My name is Pranay Mehta '
-My name is Pranay Mehta 
-+ ls
-MIME_TYPES.txt
-my-dir
-my-notes.md
-sample.sh
-tasks
-~/missing-sem/my-dir: No such file or directory
+sleep 10000 ;
+# PRESS CTRL+Z AFTERWARDS
+bg ;
+pgrep -af sleep ;
+pkill -f "sleep 10000" ;
 ```
 
 **Explanation** :- 
 
-    - `set -x` :- It is used to enable the debug mode.
-    - `echo` :- It is used to print the message.
-    - `ls` :- It is used to list the files in the current directory.
-    - `cd` :- It is used to change the current directory.
+    - `sleep 10000` :- Starts a process that will sleep for 10000 seconds.
+    - `bg` :- Backgrounds the process.
+    - `pgrep -af sleep` :- Finds the process id of the sleep command.
+    - `pkill -f "sleep 10000"` :- Kills the sleep command.
 
 ---
 
-#### **Q11: Write a command that copies a file to a backup with today’s date in the filename (e.g., `notes.txt` → `notes_2026-01-12.txt`). (Hint: `$(date +%Y-%m-%d)`). See Command Substitution.**
+#### **Q2. Say you don’t want to start a process until another completes. How would you go about it? In this exercise, our limiting process will always be `sleep 60 &`. One way to achieve this is to use the `wait` command. Try launching the sleep command and having an `ls` wait until the background process finishes.**
+<br>
 
-**Answer:**
-**Code** :- 
+#### **However, this strategy will fail if we start in a different bash session, since wait only works for child processes. One feature we did not discuss in the notes is that the kill command’s exit status will be zero on success and nonzero otherwise. kill -0 does not send a signal but will give a nonzero exit status if the process does not exist. Write a bash function called pidwait that takes a pid and waits until the given process completes. You should use sleep to avoid wasting CPU unnecessarily.**
 
-```bash
-cp ~/missing-sem/sample-file/a.txt file_$(date +%Y-%m-%d).txt;
-```
-**Output** :- 
-
-```
-file_2026-06-02.txt
-```
-**Explanation** :- 
-
-    - `cp` :- It is used to copy the file.
-    - `$(date +%Y-%m-%d)` :- It is used to get the current date in the format YYYY-MM-DD.
-    
----
-
-#### **Q12: Modify the flaky test script from the lecture to accept the test command as an argument instead of hardcoding `cargo test my_test`. (Hint: `$1` or `$@`). See [Special Parameters](https://www.gnu.org/software/bash/manual/html_node/Special-Parameters.html).**
-
-**Answer:**
-**Code** :- 
+**Answer :-**
 
 ```bash
-$@ ;
-cargo test my_test;
-```
-**Output** :-
+pidwait(){
+    pid=$1 ;
+    while kill -0 $pid 2>/dev/null
+    do
+    sleep 1 ;
+    done
 
-```
-cargo test my_test command will be executed
-```
-
-**Explanation** :-
-
-    - `$@` :- It is used to execute the command passed as an argument.
-
----
-
-#### **Q13: Use pipes to find the 5 most common file extensions in your home directory. (Hint: combine `find`, `grep` or `sed` or `awk`, `sort`, `uniq -c`, and `head`).**
-
-**Answer:**
-
-**Code** :- 
-
-```bash
-find ~ -type f | sed 's|.*\.||' | sort | uniq -c | sort -nr | head -5 ;
-```
-**Output** :- 
-
-```
-      1 zip
-      1 vmdk
-      1 zip
-      1 tar
-      1 script
+}
 ```
 
 **Explanation** :- 
 
-    - `find ~` :- It is used to find the files in the home directory.
-    - `sed` :- It is used to remove the extension from the filename.
-    - `sort` :- It is used to sort the files.
-    - `uniq -c` :- It is used to count the number of files.
-    - `sort -nr` :- It is used to sort the files in descending order.
-    - `head -5` :- It is used to get the top 5 files.
+    - `pid=$1` :- The first argument is stored in the variable `pid`.
+    - `while kill -0 $pid 2>/dev/null` :- The loop continues as long as the process with the given pid exists.
+    - `sleep 1` :- The loop sleeps for 1 second to avoid wasting CPU.
 
 ---
 
-#### **Q14: `xargs` converts lines from stdin into command arguments. Use `find` and `xargs` together (not `find -exec`) to find all `.sh` files in a directory and count the lines in each with `wc -l`. Bonus: make it handle filenames with spaces. (Hint: `-print0` and `-0`). See `man xargs`.**
-
-**Answer:**
-**Code** :- 
-
-```bash
-find . -name "*.sh" | xargs wc -l ;
-```
-**Output** :- 
-
-```
-83 ./check.sh
-24 ./my-notes.md
-0 ./tasks/palindrome.sh
-16 ./tasks/list_directory.sh
-0 ./tasks/hello.sh
-0 ./tasks/check_file.sh
-48 ./tasks/line_counter.sh
-12 ./tasks/README.md
-208 total
-```
-
-**Explanation** :-
-
-    - `find .` :- It is used to find the files in the current directory.
-    - `-name "*.sh"` :- It is used to find the files with the extension .sh.
-    - `xargs` :- It is used to convert the lines from stdin into command arguments.
-    - `wc -l` :- It is used to count the number of lines in the files.
+## FILES AND PERMISSIONS
 
 ---
 
+#### **Q1. (Advanced) Write a command or script to recursively find the most recently modified file in a directory. More generally, can you list all files by recency?**
 
-#### **Q15: Use `curl` to fetch the HTML of the course website ([`https://missing.csail.mit.edu/`](https://missing.csail.mit.edu/)) and pipe it to `grep` to count how many lectures are listed. (Hint: look for a pattern that appears once per lecture; use `curl -s` to silence the progress output.)**
-
-**Answer:**
-**Code** :- 
+**Answer :-**
 
 ```bash
-curl -s https://missing.csail.mit.edu/ | grep -c "1/" ;
-```
-**Output** :- 
-
-```
-19
+ls -l -R -s -t | head -3 | tail -1
 ```
 
 **Explanation** :- 
 
-    - `curl -s` :- It is used to fetch the HTML of the course website.
-    - `grep "1/"` :- It is used to search for the pattern "1/" in the HTML as every lecture was conducted in the month of Jan.
-    - `-c` :- It is used to count the number of lines.
+    - `ls -l -R -s -t` :- Lists all files in the current directory and its subdirectories in long format, sorted by modification time.
+    - `head -3` :- Takes the first 3 lines of the output.
+    - `tail -1` :- Takes the last line of the output.
 
 ---
 
-#### **Q16: `jq` is a powerful tool for processing JSON data. Fetch the sample data at [`https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json`](https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json) with `curl` and use `jq` to extract just the names of people whose version is greater than 6. (Hint: pipe to `jq .` first to see the structure; then try `jq '.[] | select(...) | .name'`)**
+## TERMINAL MULTIPLEXERS
 
-**Answer:**
-**Code** 
+---
 
+#### **Q1. Follow this `tmux` [tutorial](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/) and then learn how to do some basic customizations following [these](https://www.hamvocke.com/blog/a-guide-to-customizing-your-tmux-conf/) steps.**
+
+**Answer :-**
 
 ```bash
-curl -s https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json | jq '.[] | select(.version>6) | .name'
-```
-**Output** :- 
 
-```
-"Aamir Solangi"
-"Adil Eli"
-"Adil Abro"
-"Antía Sixirei"
-"Aygul Mutellip"
-"Celtia Anes"
-"George Mifsud"
-"Dialè Meso"
-"Doreen Bartolo"
-"Ali Ayaz"
-"Guzelnur Polat"
-"John Falzon"
-"Marcos Amboade"
-"Shafqat Memon"
-"Meladi Papo"
-"Sabela Veloso"
-"Madule Ledimo"
-"Philip Camilleri"
-"Hunadi Makgatho"
-"Charmaine Abela"
-"Tumelò Letamo"
-"Tegra Núnez"
-"Dilnur Qeyser"
-"Iago Peirallo"
-"Josephine Balzan"
-"Mmathabò Mojapelo"
-"Kgabo Lerumo"
-"Lawrence Scicluna"
-"Joseph Grech"
-"Lesetja Theko"
-"Martiño Arxíz"
-"Malehumò Ledwaba"
-"Lajwanti Kumari"
-"Maria Sammut"
-"Matome Molamo"
-"Noa Ervello"
-"sayama Amir"
-"Mariña Quintá"
-"Memet Tursun"
-"Rashid Rajput"
-"Nicholas Micallef"
-"Peter Zammit"
-"Maname Mohlare"
-"Tshepè Mobu"
-"Monica Lohana"
-"Joanne Scerri"
-"Ratanang Maphutha"
-"Thobile Mbele"
-"Kristján Kristjánsson"
-"Stefán Stefánsson"
-"Preeti Rajdan"
-"Sanjay Trivedi"
-"Damir Benic"
-"Sigrún Kristjánsdóttir"
-"Rajesh Santoshi"
-"Mxolisi Mhlongo"
-"Monty Dubey"
-"Richa Choukse"
-"Ingibjörg Ólafsdóttir"
-"Mogorosi Bakwena"
-"Ronak Gupta"
-"Chetana Hegde"
-"Mohan Pandey"
-"Haris Osmanovic"
-"Kenosi Kwenaemang"
-"Adnan Spahic"
-"Kabelo Morwe"
-"Einar Einarsson"
-"Sigríður Einarsdóttir"
-"Sonu Jain"
-"Boitumelo Ngwako"
-"Modise Tau"
-"Gunnar Gunnarsson"
-"Kgosietsile Bogatsu"
-"Monika Nayak"
-"Lucky Shastry"
-"Raju Rathore"
-"Meenakshi Benjaree"
-"Samir Simic"
-"Prashant Chourey"
-"Prakash Malviya"
-"Ivana Kalic"
-"Denis Terzic"
-"Bukhosi Bhengu"
-"Siyabonga Sithole"
-"Rohini Vasav"
-"Sunil Kapoor"
-"Zamokuhle Zulu"
+tmux new -s session_name
+# Press Ctrl-B and then C to create a new window
+tmux new-window -n window_name
+# Switch between windows with Ctrl-B and N or P (forward/backward)
+tmux select-window -t window_number
+# To switch to window 1
+tmux select-window -t 1
 ```
 
 **Explanation** :- 
 
-    - `curl -s` :- It is used to fetch the HTML of the course website.
-    - `jq` :- It is used to process the JSON data.
-    - `'.[] | select(.version>6) | .name'` :- It is used to extract the name of the people whose version is greater than 6.
+    - `tmux new -s session_name` :- Creates a new tmux session with the given name.
+    - `tmux new-window -n window_name` :- Creates a new window in the current tmux session with the given name.
+    - `tmux select-window -t window_number` :- Switches to the window with the given number.
+    - `tmux select-window -t 1` :- Switches to the window with the number 1.
 
 ---
 
+## ALIASES AND DOTFILES
 
-#### **Q17: `awk` can filter lines based on column values and manipulate output. For example, `awk '$3 ~ /pattern/ {$4=""; print}'` prints only lines where the third column matches pattern, while omitting the fourth column. Write an `awk` command that prints only lines where the second column is greater than 100, and swaps the first and third columns. Test with: `printf 'a 50 x\nb 150 y\nc 200 z\n'`**
+---
 
-***Answer:***
-**Code** :- 
+#### **Q1.Create an alias `dc` that resolves to `cd` for when you type it wrong.**
+
+**Answer :-**
 
 ```bash
-printf 'a 50 x\nb 150 y\nc 200 z\n' | awk '$2 > 100 {print $3, $2, $1}'
-```
-
-**Output** :- 
-
-```
-y 150 b
-z 200 c
+    alias dc=cd
 ```
 
 **Explanation** :- 
 
-    - `printf` :- It is used to print the data.
-    - `awk` :- It is used to process the data.
-    - `'$2 > 100 {print $3, $1}'` :- It is used to print the data where the second column is greater than 100 and swap the first and third columns.
+    - `alias dc=cd` :- Creates an alias named `dc` that resolves to `cd`. 
 
 ---
 
-#### **Q18: Dissect the SSH log pipeline from the lecture: what does each step do? Then build something similar to find your most-used shell commands from `~/.bash_history` (or `~/.zsh_history`).**
+#### **Q2. Run `history | awk '{$1="";print substr($0,2)}' | sort | uniq -c | sort -n | tail -n 10` to get your top 10 most used commands and consider writing shorter aliases for them. Note: this works for Bash; if you’re using ZSH, use `history 1` instead of just `history`.**
 
-**Answer:**
-**Code** :- 
+**Answer :-**
+My Output From the Given Command :- 
+```bash
+13 ./pidwait.sh 
+9 ./q2.sh 
+7 ./q3.sh 
+7 wait 
+6 ./linux.sh 
+6 sudo su 
+5 ls
+4 cd ..
+1 touch q1.sh
+```
 
 ```bash
-cat ~/.bash_history \
-| awk '{print $1}' \
-| sort \
-| uniq -c \
-| sort -nr \
-| head -20
-```
-
-**Output** :- 
-
-```
-     107 ls
-     78 cd
-     48 chmod
-     31 sudo
-     27 echo
-     24 git
-     20 man
-     19 touch
-     16 mkdir
-     15 pidwait
-     13 cp
-     11 ./q1.sh
-     11 cat
-     10 sleep
-      8 wait
-      8 grep
-      8 cliamp
-      8 alias
-      7 rm
-      6 vim
+alias pid=./pidwait.sh ; 
+alias q2=./q2.sh ; 
+alias linux=./linux.sh ; 
+alias q3=./q3.sh ; 
+alias t_q1='touch q1.sh' ; 
+alias w=wait ; 
+alias ..='cd ..' ; 
+alias q1=./q1.sh ; 
+alias ss='sudo su' ; 
+alias ls=ls 
 ```
 
 **Explanation** :- 
-        
-    - `cat ~/.bash_history` :- It is used to print the contents of the file.
-    - `awk '{print $1}'` :- It is used to print the first column.
-    - `sort` :- It is used to sort the data.
-    - `uniq -c` :- It is used to count the number of unique lines.
-    - `sort -nr` :- It is used to sort the data in descending order.
-    - `head -20` :- It is used to get the top 20 lines.
+
+    - `alias pid=./pidwait.sh` :- Creates an alias named `pid` that resolves to `./pidwait.sh`. 
+    - `alias q2=./q2.sh` :- Creates an alias named `q2` that resolves to `./q2.sh`. 
+    - `alias linux=./linux.sh` :- Creates an alias named `linux` that resolves to `./linux.sh`. 
+    - `alias q3=./q3.sh` :- Creates an alias named `q3` that resolves to `./q3.sh`. 
+    - `alias t_q1='touch q1.sh'` :- Creates an alias named `t_q1` that resolves to `touch q1.sh`. 
+    - `alias w=wait` :- Creates an alias named `w` that resolves to `wait`. 
+    - `alias ..='cd ..'` :- Creates an alias named `..` that resolves to `cd ..`. 
+    - `alias q1=./q1.sh` :- Creates an alias named `q1` that resolves to `./q1.sh`. 
+    - `alias ss='sudo su'` :- Creates an alias named `ss` that resolves to `sudo su`. 
+    - `alias ls=ls` :- Creates an alias named `ls` that resolves to `ls`. 
+
+---
+
+#### **Q3. Create a folder for your dotfiles and set up version control.**
+
+**Answer :-**
+    **Run this in the Terminal** <br>
+    ```
+        git clone https://github.com/PRANAY2702/missing-sem/tree/main/missing-sem%20-%20LECTURE%202/Aliasis_And_Dotfiles/dotfiles
+    ```
+
+---   
+
+#### **Q4. Add a configuration for at least one program, e.g. your shell, with some customization (to start off, it can be something as simple as customizing your shell prompt by setting `$PS1`).**
+
+**Answer :-**
+
+```bash
+export PS1='\u@\h:\w\$ ' ;
+```
+
+**Explanation** :- 
+
+    - `export PS1='\u@\h:\w\$ '` :- Sets the prompt to `username@hostname:current_directory$ `.
+
+--- 
+
+#### **Q5. Set up a method to install your dotfiles quickly (and without manual effort) on a new machine. This can be as simple as a shell script that calls `ln -s` for each file, or you could use a [`specialized utility`](https://dotfiles.github.io/utilities/).**
+
+**Answer :-**
+
+```bash
+git clone https://github.com/PRANAY2702/missing-sem/tree/main/missing-sem%20-%20LECTURE%202/Aliasis_And_Dotfiles/dotfiles ;
+cd dotfiles ;
+chmod +x script.sh ;
+./script.sh ;
+
+```
+You can make the Script file on your own by using the code below
+
+```bash
+#=============LOCATION OF DOTFILES====================
+# Location can be different for you so change it accordingly
+
+DOTFILES="~/missing-sem/missing-sem - LECTURE 2/Aliasis_And_Dotfiles/dotfiles" 
+
+ln -sf "$DOTFILES/.pranay.txt" "$HOME/.pranay.txt"
+ln -sf "$DOTFILES/.xyz.txt" "$HOME/.xyz.txt"
+
+echo "Files installed successfully" ;
+```
+
+---
+
+#### **Q6. Test your installation script on a fresh virtual machine.**
+
+**Answer :-**
+
+**On a Fresh Virtual Machine :-**
+**Run the code in Q5.**
+
+---
+
+#### **Q7. Migrate all of your current tool configurations to your dotfiles repository.**
+
+**Answer :-**
+You can do this on your own :-) 
+
+---
+
+#### **Q8. Publish your dotfiles on GitHub.**
+
+**Answer :-**
+
+```bash
+# Go to Your own dotfiles folder and do the following
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin <your-repo-url>
+git push -u origin main
+```
+
+---
+
+## REMOTE MACHINES
+
+---     
+
+`NOTE :- ` Install a Linux virtual machine (or use an already existing one) for these exercises. If you are not familiar with virtual machines check out this tutorial for installing one.
+
+#### **Q1Go to ~/.ssh/ and check if you have a pair of SSH keys there. If not, generate them with ssh-keygen -a 100 -t ed25519. It is recommended that you use a password and use ssh-agent, more in.**
+
+**Answer :-**
+
+```bash
+
+```
+---
+
+#### **Q2 Edit `.ssh/config` to have an entry as follows:.**
+```bash
+Host vm
+    User username_goes_here
+    HostName ip_goes_here
+    IdentityFile ~/.ssh/id_ed25519
+    LocalForward 9999 localhost:8888
+
+```
+
+**Answer :-**
+
+```bash
+
+```
+---
+
+#### **Q3. `Use ssh-copy-id vm`to copy your ssh key to the server.**
+
+**Answer :-**
+
+```bash
+
+```
+---
+
+#### **Q4.Start a webserver in your VM by executing `python -m http.server 8888`. Access the VM webserver by navigating to `http://localhost:9999` in your machine.**
+
+**Answer :-**
+
+```bash
+
+```
+---
+
+#### **Q5. Edit your SSH server config by doing `sudo vim /etc/ssh/sshd_config` and disable password authentication by editing the value of `PasswordAuthentication`. Disable root login by editing the value of `PermitRootLogin`. Restart the ssh service with `sudo service sshd restart`. Try sshing in again.**
+
+**Answer :-**
+
+```bash
+
+```
+---
+
+#### **Q6. (Challenge) Install [`mosh`](https://mosh.org/) in the VM and establish a connection. Then disconnect the network adapter of the server/VM. Can mosh properly recover from it?**
+
+**Answer :-**
+
+```bash
+
+```
+---
+
+#### **Q7.(Challenge) Look into what the `-N` and `-f` flags do in `ssh` and figure out a command to achieve background port forwarding.**
+
+**Answer :-**
+
+```bash
+
+```
 ---
 
 
 
-> Check Out my github for the exact solutions :- [
-https://github.com/pranay2702/missing-sem
-](https://github.com/pranay2702/missing-sem)
+
+
+
+
+
+
 
 
 

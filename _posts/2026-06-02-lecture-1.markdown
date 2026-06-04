@@ -1,0 +1,587 @@
+---
+layout: post
+title:  "Lecture 1: Course Overview + Introduction to the Shell "
+date:   2026-06-02 15:32:00 +0530
+categories: shell commands , bash , overview
+tags: [shell, bash, scripting, linux, interview]
+---
+
+For Notes and Videos Checkout :- [`https://missing.csail.mit.edu/2026/course-shell/`](https://missing.csail.mit.edu/2026/course-shell/)
+
+---
+
+#### **Q1: For this course, you need to be using a Unix shell like Bash or ZSH. If you are on Linux or macOS, you don’t have to do anything special. If you are on Windows, you need to make sure you are not running cmd.exe or PowerShell; you can use [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) or a Linux virtual machine to use Unix-style command-line tools. To make sure you’re running an appropriate shell, you can try the command ```echo $SHELL```. If it says something like ```/bin/bash``` or ```/usr/bin/zsh```, that means you’re running the right program.**
+
+**Answer:**
+Code :- 
+
+```
+echo $SHELL 
+```
+Output :- 
+```
+/bin/bash
+```
+
+---
+
+#### **Q2: What does the `-l` flag to `ls` do? Run `ls -l /` and examine the output. What do the first 10 characters of each line mean? (Hint: `man ls`)?**
+
+**Answer:**
+
+Code :- 
+
+```
+ls -l /
+```
+Output :- 
+
+```
+total 52
+drwxr-xr-x  2 root root  4096 Jun  1 18:43 bin
+drwxr-xr-x  3 root root  4096 Apr  1 07:43 boot
+drwxr-xr-x  4 root root   400 Jun  4 02:03 dev
+drwxr-xr-x 57 root root 12288 Jun  1 16:40 etc
+drwxr-xr-x  2 root root  4096 Apr  1 07:35 home
+drwxr-xr-x 10 root root  4096 Jun  3 20:05 lib
+drwxr-xr-x  2 root root  4096 Apr  1 07:35 lib32
+drwxr-xr-x  2 root root  4096 Apr  1 07:35 lib64
+drwxr-xr-x  2 root root  4096 Apr  1 07:35 libx32
+dr-xr-xr-x 10 root root  4096 Jun  4 02:06 media
+dr-xr-xr-x  2 root root  4096 Jun  2 21:22 mnt
+drwxr-xr-x  2 root root  4096 Apr  1 07:35 opt
+dr-xr-xr-x 215 root root     0 Jun  4 02:03 proc
+drwxr-x---  7 root root  4096 Jun  3 17:00 root
+drwxr-xr-x 37 root root  1024 Jun  3 19:26 run
+drwxr-xr-x  2 root root  4096 Apr  1 07:43 sbin
+dr-xr-xr-x  2 root root  4096 Jun  2 21:23 srv
+dr-xr-xr-x 13 root root     0 Jun  4 02:03 sys
+drwxrwxrwt 13 root root  4096 Jun  4 03:00 tmp
+drwxr-xr-x 14 root root  4096 Jun  1 07:43 usr
+drwxr-xr-x 13 root root  4096 Jun  1 07:43 var
+```
+**Explanation :-**
+    - The first 10 characters of each line represent the permissions of the file.
+    - The first character represents the type of the file.
+    - The next 9 characters represent the permissions of the file.
+    - The next 3 characters represent the permissions of the group.
+    - The next 3 characters represent the permissions of the others.
+
+
+
+---
+
+#### **Q3: In the command `find ~/Downloads -type f -name "*.zip" -mtime +30`, the `*.zip` is a “glob”. What is a glob? Create a test directory with some files and experiment with patterns like `ls *.txt`, `ls file?.txt`, and `ls {a,b,c}.txt`. See [Pattern Matching](https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html) in the Bash manual.**
+
+**Answer:**
+
+Globs are patterns that are used to match file names. They are used by the shell to find files that match the pattern.
+
+Make a Folder named sample-files and inside it create files
+`a.txt`, `b.txt`, `c.txt`, `file1.txt` , `file2.txt` , `file10.txt` 
+
+**Code** :- 
+
+```
+cd sample-file ;
+ls *.txt;
+ls file?.txt ;
+ls {a,b,c}.txt ;
+```
+Output :- 
+
+```
+a.txt b.txt c.txt file1.txt file2.txt file10.txt
+file1.txt file2.txt 
+a.txt b.txt c.txt
+```
+**Explanation** :- 
+
+    - `*.txt` :- This will match all the files that have a `.txt` extension.
+    - `file?.txt` :- This will match all the files that have a `.txt` extension and a single character before the `.txt` extension.
+    - `{a,b,c}.txt` :- This will match all the files that have a `.txt` extension and a single character which is either a, b, or c before the `.txt` extension.
+           
+
+
+---
+
+#### **Q4: What’s the difference between `'single quotes'`, `"double quotes"`, and `$'ANSI quotes'`? Write a command that echoes a string containing a literal $, a !, and a newline character. See [Quoting](https://www.gnu.org/software/bash/manual/html_node/Quoting.html).**
+
+**Answer:**
+
+**Single quotes** :- 
+
+    `'` :- It is used to prevent the shell from interpreting any special characters. It is used to create a literal string.
+    
+**Double quotes** :- 
+
+    `"` :- It is used to prevent the shell from interpreting any special characters except for `\`, `` ` ``, `$`, and `\n`. It is used to create a literal string.
+    
+**ANSI quotes** :- 
+
+    `$\` :- It is used to prevent the shell from interpreting any special characters except for `\`, `` ` ``, `$`, and `\n`. It is used to create a literal string.
+
+**Code** :-
+
+```bash
+echo '$PATH' ;
+echo "$PATH" ;
+echo $'dollar : $\nexclaimation mark : !' ;
+```
+Output :-
+
+```
+$PATH
+/home/pranay
+dollar : $
+exclaimation mark : !
+```
+
+---
+
+
+#### **Q5: The shell has three standard streams: stdin (0), stdout (1), and stderr (2). Run `ls /nonexistent /tmp` and redirect stdout to one file and stderr to another. How would you redirect both to the same file? See [Redirections](https://www.gnu.org/software/bash/manual/html_node/Redirection-Examples.html).**
+
+**Answer:**
+**Code** :-
+
+```bash
+ls /nonexistent /tmp > file.txt 2> error.txt
+ls /nonexistent /tmp > file.txt 2>&1
+```
+Output :- 
+
+Two files, out.txt and error.txt is created in the current directory from the first line of code, error.txt contains error
+and out.txt contains the output without the error.
+
+
+Second line of code will create a single file all.txt and put both output and error in it 
+
+---
+
+#### **Q6: `$?` holds the exit status of the last command (0 = success). `&&` runs the next command only if the previous succeeded; `||` runs it only if the previous failed. Write a one-liner that creates `/tmp/mydir` only if it doesn’t already exist. See [Exit Status](https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html).**
+
+**Answer:**
+
+```bash
+[ ! -d ~/missing-sem/my-dir ] && mkdir ~/missing-sem/my-dir ; 
+```
+
+
+**Explanation** :- 
+
+    - `mkdir` :- It is used to create a directory.
+    - `&&` :- It is used to run the next command only if the previous command succeeded.
+    - `!` :- It is used to negate the result of the previous command.
+    - `-d` :- It is used to check if the file is a directory.
+
+---
+
+#### **Q7: Why does `cd` have to be built into the shell itself rather than a standalone program? (Hint: think about what a child process can and cannot affect in its parent.)**
+
+**Answer:**
+    `cd` have to be a built in shell because it have to change the current directory of the parent process. If it was a standalone program, it would only change the current directory of the child process, which would not affect the parent process. 
+
+
+---
+
+#### **Q8: Write a script that takes a filename as an argument (`$1`) and checks whether the file exists using `test -f` or `[ -f ... ]`. It should print different messages depending on whether the file exists. See [Bash Conditional Expressions](https://www.gnu.org/software/bash/manual/html_node/Conditional-Expressions.html).**
+
+**Answer:**
+**Code** :- 
+
+
+```bash
+if [ -f "$1" ]; then  
+echo "File exists!" ;
+ else 
+echo "File does not exists" ;
+fi
+```
+
+**Explanation** :- 
+
+    - `-f` :- It is used to check if the file exists.
+    - `&&` :- It is used to run the next command only if the previous command succeeded.
+    - `||` :- It is used to run the next command only if the previous command failed.
+    
+---
+
+#### **Q9: Save the script from the previous exercise to a file (e.g., `check.sh`). Try running it with `./check.sh somefile`. What happens? Now run `chmod +x check.sh` and try again. Why is this step necessary? (Hint: look at `ls -l check.sh` before and after the `chmod`.)**
+
+**Answer:**
+**Code** :- 
+
+```bash
+touch check.sh ;
+cp check.sh sample.sh ;
+ls -l sample.sh ;
+chmod +x sample.sh ;
+ls -l sample.sh
+```
+Output
+```
+-rw-r--r-- 1 root root 0 June 4 15:59 sample.sh
+-rwxr-xr-x 1 root root 0 June 4 15:59 sample.sh
+```
+**Explanation** :- 
+
+    - `chmod +x` :- It is used to give execute permission to the file.
+    - `ls -l` :- It is used to list the files in long format.
+
+
+---
+
+#### **Q10: What happens if you add `-x` to the `set` flags in a script? Try it with a simple script and observe the output. See [The Set Builtin](https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html).**
+
+**Answer:**
+**Code** :- 
+
+```bash
+set -x ;
+echo "My name is Pranay Mehta " ;
+ls ;
+cd my-dir ;
+cd xyz ;
+```
+Output
+```
++ set -x
++ echo 'My name is Pranay Mehta '
+My name is Pranay Mehta 
++ ls
+MIME_TYPES.txt
+my-dir
+my-notes.md
+sample.sh
+tasks
+~/missing-sem/my-dir: No such file or directory
+```
+
+**Explanation** :- 
+
+    - `set -x` :- It is used to enable the debug mode.
+    - `echo` :- It is used to print the message.
+    - `ls` :- It is used to list the files in the current directory.
+    - `cd` :- It is used to change the current directory.
+
+---
+
+#### **Q11: Write a command that copies a file to a backup with today’s date in the filename (e.g., `notes.txt` → `notes_2026-01-12.txt`). (Hint: `$(date +%Y-%m-%d)`). See Command Substitution.**
+
+**Answer:**
+**Code** :- 
+
+```bash
+cp ~/missing-sem/sample-file/a.txt file_$(date +%Y-%m-%d).txt;
+```
+**Output** :- 
+
+```
+file_2026-06-02.txt
+```
+**Explanation** :- 
+
+    - `cp` :- It is used to copy the file.
+    - `$(date +%Y-%m-%d)` :- It is used to get the current date in the format YYYY-MM-DD.
+    
+---
+
+#### **Q12: Modify the flaky test script from the lecture to accept the test command as an argument instead of hardcoding `cargo test my_test`. (Hint: `$1` or `$@`). See [Special Parameters](https://www.gnu.org/software/bash/manual/html_node/Special-Parameters.html).**
+
+**Answer:**
+**Code** :- 
+
+```bash
+$@ ;
+cargo test my_test;
+```
+**Output** :-
+
+```
+cargo test my_test command will be executed
+```
+
+**Explanation** :-
+
+    - `$@` :- It is used to execute the command passed as an argument.
+
+---
+
+#### **Q13: Use pipes to find the 5 most common file extensions in your home directory. (Hint: combine `find`, `grep` or `sed` or `awk`, `sort`, `uniq -c`, and `head`).**
+
+**Answer:**
+
+**Code** :- 
+
+```bash
+find ~ -type f | sed 's|.*\.||' | sort | uniq -c | sort -nr | head -5 ;
+```
+**Output** :- 
+
+```
+      1 zip
+      1 vmdk
+      1 zip
+      1 tar
+      1 script
+```
+
+**Explanation** :- 
+
+    - `find ~` :- It is used to find the files in the home directory.
+    - `sed` :- It is used to remove the extension from the filename.
+    - `sort` :- It is used to sort the files.
+    - `uniq -c` :- It is used to count the number of files.
+    - `sort -nr` :- It is used to sort the files in descending order.
+    - `head -5` :- It is used to get the top 5 files.
+
+---
+
+#### **Q14: `xargs` converts lines from stdin into command arguments. Use `find` and `xargs` together (not `find -exec`) to find all `.sh` files in a directory and count the lines in each with `wc -l`. Bonus: make it handle filenames with spaces. (Hint: `-print0` and `-0`). See `man xargs`.**
+
+**Answer:**
+**Code** :- 
+
+```bash
+find . -name "*.sh" | xargs wc -l ;
+```
+**Output** :- 
+
+```
+83 ./check.sh
+24 ./my-notes.md
+0 ./tasks/palindrome.sh
+16 ./tasks/list_directory.sh
+0 ./tasks/hello.sh
+0 ./tasks/check_file.sh
+48 ./tasks/line_counter.sh
+12 ./tasks/README.md
+208 total
+```
+
+**Explanation** :-
+
+    - `find .` :- It is used to find the files in the current directory.
+    - `-name "*.sh"` :- It is used to find the files with the extension .sh.
+    - `xargs` :- It is used to convert the lines from stdin into command arguments.
+    - `wc -l` :- It is used to count the number of lines in the files.
+
+---
+
+
+#### **Q15: Use `curl` to fetch the HTML of the course website ([`https://missing.csail.mit.edu/`](https://missing.csail.mit.edu/)) and pipe it to `grep` to count how many lectures are listed. (Hint: look for a pattern that appears once per lecture; use `curl -s` to silence the progress output.)**
+
+**Answer:**
+**Code** :- 
+
+```bash
+curl -s https://missing.csail.mit.edu/ | grep -c "1/" ;
+```
+**Output** :- 
+
+```
+19
+```
+
+**Explanation** :- 
+
+    - `curl -s` :- It is used to fetch the HTML of the course website.
+    - `grep "1/"` :- It is used to search for the pattern "1/" in the HTML as every lecture was conducted in the month of Jan.
+    - `-c` :- It is used to count the number of lines.
+
+---
+
+#### **Q16: `jq` is a powerful tool for processing JSON data. Fetch the sample data at [`https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json`](https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json) with `curl` and use `jq` to extract just the names of people whose version is greater than 6. (Hint: pipe to `jq .` first to see the structure; then try `jq '.[] | select(...) | .name'`)**
+
+**Answer:**
+**Code** 
+
+
+```bash
+curl -s https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json | jq '.[] | select(.version>6) | .name'
+```
+**Output** :- 
+
+```
+"Aamir Solangi"
+"Adil Eli"
+"Adil Abro"
+"Antía Sixirei"
+"Aygul Mutellip"
+"Celtia Anes"
+"George Mifsud"
+"Dialè Meso"
+"Doreen Bartolo"
+"Ali Ayaz"
+"Guzelnur Polat"
+"John Falzon"
+"Marcos Amboade"
+"Shafqat Memon"
+"Meladi Papo"
+"Sabela Veloso"
+"Madule Ledimo"
+"Philip Camilleri"
+"Hunadi Makgatho"
+"Charmaine Abela"
+"Tumelò Letamo"
+"Tegra Núnez"
+"Dilnur Qeyser"
+"Iago Peirallo"
+"Josephine Balzan"
+"Mmathabò Mojapelo"
+"Kgabo Lerumo"
+"Lawrence Scicluna"
+"Joseph Grech"
+"Lesetja Theko"
+"Martiño Arxíz"
+"Malehumò Ledwaba"
+"Lajwanti Kumari"
+"Maria Sammut"
+"Matome Molamo"
+"Noa Ervello"
+"sayama Amir"
+"Mariña Quintá"
+"Memet Tursun"
+"Rashid Rajput"
+"Nicholas Micallef"
+"Peter Zammit"
+"Maname Mohlare"
+"Tshepè Mobu"
+"Monica Lohana"
+"Joanne Scerri"
+"Ratanang Maphutha"
+"Thobile Mbele"
+"Kristján Kristjánsson"
+"Stefán Stefánsson"
+"Preeti Rajdan"
+"Sanjay Trivedi"
+"Damir Benic"
+"Sigrún Kristjánsdóttir"
+"Rajesh Santoshi"
+"Mxolisi Mhlongo"
+"Monty Dubey"
+"Richa Choukse"
+"Ingibjörg Ólafsdóttir"
+"Mogorosi Bakwena"
+"Ronak Gupta"
+"Chetana Hegde"
+"Mohan Pandey"
+"Haris Osmanovic"
+"Kenosi Kwenaemang"
+"Adnan Spahic"
+"Kabelo Morwe"
+"Einar Einarsson"
+"Sigríður Einarsdóttir"
+"Sonu Jain"
+"Boitumelo Ngwako"
+"Modise Tau"
+"Gunnar Gunnarsson"
+"Kgosietsile Bogatsu"
+"Monika Nayak"
+"Lucky Shastry"
+"Raju Rathore"
+"Meenakshi Benjaree"
+"Samir Simic"
+"Prashant Chourey"
+"Prakash Malviya"
+"Ivana Kalic"
+"Denis Terzic"
+"Bukhosi Bhengu"
+"Siyabonga Sithole"
+"Rohini Vasav"
+"Sunil Kapoor"
+"Zamokuhle Zulu"
+```
+
+**Explanation** :- 
+
+    - `curl -s` :- It is used to fetch the HTML of the course website.
+    - `jq` :- It is used to process the JSON data.
+    - `'.[] | select(.version>6) | .name'` :- It is used to extract the name of the people whose version is greater than 6.
+
+---
+
+
+#### **Q17: `awk` can filter lines based on column values and manipulate output. For example, `awk '$3 ~ /pattern/ {$4=""; print}'` prints only lines where the third column matches pattern, while omitting the fourth column. Write an `awk` command that prints only lines where the second column is greater than 100, and swaps the first and third columns. Test with: `printf 'a 50 x\nb 150 y\nc 200 z\n'`**
+
+***Answer:***
+**Code** :- 
+
+```bash
+printf 'a 50 x\nb 150 y\nc 200 z\n' | awk '$2 > 100 {print $3, $2, $1}'
+```
+
+**Output** :- 
+
+```
+y 150 b
+z 200 c
+```
+
+**Explanation** :- 
+
+    - `printf` :- It is used to print the data.
+    - `awk` :- It is used to process the data.
+    - `'$2 > 100 {print $3, $1}'` :- It is used to print the data where the second column is greater than 100 and swap the first and third columns.
+
+---
+
+#### **Q18: Dissect the SSH log pipeline from the lecture: what does each step do? Then build something similar to find your most-used shell commands from `~/.bash_history` (or `~/.zsh_history`).**
+
+**Answer:**
+**Code** :- 
+
+```bash
+cat ~/.bash_history \
+| awk '{print $1}' \
+| sort \
+| uniq -c \
+| sort -nr \
+| head -20
+```
+
+**Output** :- 
+
+```
+     107 ls
+     78 cd
+     48 chmod
+     31 sudo
+     27 echo
+     24 git
+     20 man
+     19 touch
+     16 mkdir
+     15 pidwait
+     13 cp
+     11 ./q1.sh
+     11 cat
+     10 sleep
+      8 wait
+      8 grep
+      8 cliamp
+      8 alias
+      7 rm
+      6 vim
+```
+
+**Explanation** :- 
+        
+    - `cat ~/.bash_history` :- It is used to print the contents of the file.
+    - `awk '{print $1}'` :- It is used to print the first column.
+    - `sort` :- It is used to sort the data.
+    - `uniq -c` :- It is used to count the number of unique lines.
+    - `sort -nr` :- It is used to sort the data in descending order.
+    - `head -20` :- It is used to get the top 20 lines.
+---
+
+
+
+> Check Out my github for the exact solutions :- [
+https://github.com/pranay2702/missing-sem
+](https://github.com/pranay2702/missing-sem)
+
+
+
+
