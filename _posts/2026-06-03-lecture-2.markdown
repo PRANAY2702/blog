@@ -463,7 +463,11 @@ Host vm
 **Answer :-**
 
 ```bash
-
+Host vm
+    User rdmehta5608 #<your username>
+    HostName 192.168.1.1 #<your ip address>
+    IdentityFile ~/.ssh/id_ed25519 #<your key file>
+    LocalForward 9999 localhost:8888 #<port forwarding>
 ```
 ---
 
@@ -472,8 +476,13 @@ Host vm
 **Answer :-**
 
 ```bash
-
+ssh-copy-id vm  #<copy your ssh key to the server>
 ```
+
+**Explanation** :- 
+
+    - `ssh-copy-id vm` :- Copies your ssh key to the server. 
+
 ---
 
 #### **Q4.Start a webserver in your VM by executing `python -m http.server 8888`. Access the VM webserver by navigating to `http://localhost:9999` in your machine.**
@@ -481,8 +490,15 @@ Host vm
 **Answer :-**
 
 ```bash
-
+    python -m http.server 8888  #<start webserver in your vm>
+    http://localhost:9999       #<access webserver in your machine>
 ```
+
+**Explanation** :- 
+
+    - `python -m http.server 8888` :- Starts a webserver in your vm. 
+    - `http://localhost:9999` :- Accesses the webserver in your machine. 
+
 ---
 
 #### **Q5. Edit your SSH server config by doing `sudo vim /etc/ssh/sshd_config` and disable password authentication by editing the value of `PasswordAuthentication`. Disable root login by editing the value of `PermitRootLogin`. Restart the ssh service with `sudo service sshd restart`. Try sshing in again.**
@@ -490,8 +506,19 @@ Host vm
 **Answer :-**
 
 ```bash
-
+sudo vim /etc/ssh/sshd_config  #<edit ssh server config>
+PasswordAuthentication no      #<disable password authentication>
+PermitRootLogin no           #<disable root login>
+sudo service sshd restart      #<restart ssh service>
 ```
+
+**Explanation** :- 
+
+    - `sudo vim /etc/ssh/sshd_config` :- Edits the ssh server config. 
+    - `PasswordAuthentication no` :- Disables password authentication. 
+    - `PermitRootLogin no` :- Disables root login. 
+    - `sudo service sshd restart` :- Restarts the ssh service. 
+
 ---
 
 #### **Q6. (Challenge) Install [`mosh`](https://mosh.org/) in the VM and establish a connection. Then disconnect the network adapter of the server/VM. Can mosh properly recover from it?**
@@ -499,8 +526,15 @@ Host vm
 **Answer :-**
 
 ```bash
-
+sudo apt-get install mosh  #<install mosh in your vm>
+mosh vm                  #<establish connection>
 ```
+
+**Explanation** :- 
+
+    - `sudo apt-get install mosh` :- Installs mosh in your vm. 
+    - `mosh vm` :- Establishes a connection to the server. 
+
 ---
 
 #### **Q7.(Challenge) Look into what the `-N` and `-f` flags do in `ssh` and figure out a command to achieve background port forwarding.**
@@ -508,8 +542,13 @@ Host vm
 **Answer :-**
 
 ```bash
-
+ssh -fN -L 9999:localhost:8888 vm  #<background port forwarding>
 ```
+
+**Explanation** :- 
+
+    - `ssh -fN -L 9999:localhost:8888 vm` :- Achieves background port forwarding. 
+
 ---
 
 
