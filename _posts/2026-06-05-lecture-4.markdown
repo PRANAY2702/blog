@@ -1,3 +1,4 @@
+---
 layout: post
 title:  "Lecture 4: Debugging and Profiling"
 date:   2026-06-05 13:40:00 +0530
