@@ -1,0 +1,216 @@
+---
+layout: post
+title:  "Lecture 5: Version Control and Git "
+date:   2026-06-08 15:50:00 +0530
+categories: version control , git
+tags: [git, version control, interview]
+---
+
+For Notes and Videos Checkout :- [`https://missing.csail.mit.edu/2026/version-control/`](https://missing.csail.mit.edu/2026/version-control/)
+
+---
+
+#### **Q1: If you don’t have any past experience with Git, either try reading the first couple chapters of [`Pro Git`](https://git-scm.com/book/en/v2) or go through a tutorial like [Learn Git Branching](https://learngitbranching.js.org/). As you’re working through it, relate Git commands to the data model.**
+
+**Answer:**
+
+You can refer the articles linked in the question for more information.
+Some Basic Git Commands :- 
+    ```bash
+    git init : Initializes a new Git repository in the current directory.
+    git add <file> : Stages the specified file for the next commit.
+    git commit -m "<message>" : Creates a new commit with the given message.
+    git status : Shows the status of the working directory.
+    git log : Shows the commit history.
+    ```
+
+---
+
+#### **Q2:Clone the [repository for the class website](https://github.com/missing-semester/missing-semester).<br>1. Explore the version history by visualizing it as a graph.<br>2. Who was the last person to modify `README.md`? (Hint: use `git log` with an argument).<br>3. What was the commit message associated with the last modification to the `collections`: line of `_config.yml`? (Hint: use `git blame` and `git show`).**
+
+**Answer:**
+
+1. Code :- 
+
+```bash
+git clone https://github.com/missing-semester/missing-semester ;
+cd missing-semester ;
+git log --all --graph --decorate --oneline ;
+```
+
+2. Code :- 
+
+```bash
+git log -n 1 README.md ;
+```
+
+3. Code :- 
+
+```bash
+git blame _config.yml | grep "collections";
+# my commit code was a88b4eac. Your code might be different
+git show a88b4eac ;
+# run these commands in the missing-semester repository to see the latest commit message .
+```
+
+**Output** :- 
+
+```
+Redo Lectures as a collection
+```
+
+
+
+---
+
+#### **Q3: One common mistake when learning Git is to commit large files that should not be managed by Git or adding sensitive information. Try adding a file to a repository, making some commits and then deleting that file from history (not just the latest commit). You may want to look at [this](https://help.github.com/articles/removing-sensitive-data-from-a-repository/).**
+
+**Answer:** 
+
+**Code** :- 
+
+```bash
+# make a repo
+git init
+# make a file and add some text to it
+echo "my secret key is this : " | cat >> secret.txt
+# add and commit the file
+git add secret.txt
+git commit -m "added secret key"
+
+# now remove the file completely from the repository
+git-filter-repo --path secret.txt --invert-paths
+# risky command until you really have to delete something
+``` 
+           
+
+
+---
+
+#### **Q4: Clone some repository from GitHub, and modify one of its existing files. What happens when you do `git stash`? What do you see when running `git log --all --oneline`? Run `git stash pop` to undo what you did with `git stash`. In what scenario might this be useful?**
+
+**Answer:**
+
+**Code** :-
+
+```bash
+git clone https://github.com/PRANAY2702/spectrum-2026 ;
+cd spectrum-2026 ;
+echo "
+smething new"
+ls ;
+git stash ;
+git log --all --oneline ;
+git stash pop;
+ls ;
+```
+
+---
+
+#### **Q5: Like many command line tools, Git provides a configuration file (or dotfile) called `~/.gitconfig`. Create an alias in `~/.gitconfig` so that when you run `git graph`, you get the output of `git log --all --graph --decorate --oneline`. You can do this by directly editing the `~/.gitconfig` file, or you can use the `git config` command to add the alias. Information about `git aliases` can be found [here](https://git-scm.com/book/en/v2/Git-Basics-Configuration).**
+
+**Answer:**
+**Code** :-
+
+```bash
+code ~/.gitconfig ;
+```
+Output :- 
+
+gitconfig opens, go to [alias] (if it does not exist, create it) and add the following line:
+graph = log --graph --oneline --all --decorate ; 
+
+---
+
+#### **Q6: You can define global ignore patterns in `~/.gitignore_global` after running `git config --global core.excludesfile ~/.gitignore_global`. This sets the location of the global ignore file that Git will use, but you still need to manually create the file at that path. Set up your global gitignore file to ignore OS-specific or editor-specific temporary files, like `.DS_Store`.**
+
+**Answer:**
+
+```bash
+git config --global core.excludesfile ~/.gitignore_global ;
+# .gitignore_global opens, You can type the name of the files you don't
+# want to add to git, for example, if you want to ignore all .log files, .env etc.
+```
+
+
+**Explanation** :- 
+
+```
+# .gitignore_global opens, You can type the name of the files you don't
+# want to add to git, for example, if you want to ignore all .log files, .env etc.
+```
+
+---
+
+#### **Q7: Fork the [repository for the class website](https://github.com/missing-semester/missing-semester), find a typo or some other improvement you can make, and submit a pull request on GitHub (you may want to look at [this](https://help.github.com/articles/about-pull-requests/)). Please only submit PRs that are useful (don’t spam us, please!). If you can’t find an improvement to make, you can skip this exercise.**
+
+**Answer:**
+You can find any error in the github repository of the course, and add a pull request to fix it.
+
+---
+
+#### **Q8: Write a script that takes a filename as an argument (`$1`) and checks whether the file exists using `test -f` or `[ -f ... ]`. It should print different messages depending on whether the file exists. See [Bash Conditional Expressions](https://www.gnu.org/software/bash/manual/html_node/Conditional-Expressions.html).**
+
+**Answer:**
+**Code** :- 
+
+
+```bash
+# =====1st part=======================================
+git init reciepe ;
+echo "A Simple Reciepe" > reciepe/reciepe.txt ;
+cd reciepe ;
+git add reciepe.txt ;
+# =====2nd Part=======================================
+git commit -m "Initial commit" ;    
+git branch salty ;
+git branch sweet ;
+# =======3rd Part=======================================
+git checkout salty ;
+sed -i 's/1 cup sugar/1 cup salt/' recipe.txt ;
+git add recipe.txt ;
+git commit -m "Make it salty" ;
+# ========4th Part=======================================
+git checkout sweet ;
+sed -i 's/1 cup sugar/2 cups sugar/' recipe.txt ;
+git add recipe.txt ;
+git commit -m "Make it sweeter" ;
+# =========5th Part=======================================
+git checkout master ;
+git merge salty ;
+git merge sweet ;
+# ERROR WILL COME AS THERE WILL BE A MERGE CONFLICT
+# =========6th Part=======================================
+git mergetool ;
+# =========7th Part=======================================
+git log --graph --oneline --all ;
+
+```
+**Explanations**
+- `git init` : It is used to initialize a new git repository.
+
+- `git add` : It is used to add a file to the staging area.
+
+- `git commit` : It is used to commit the staged files.
+
+- `git branch` : It is used to create a new branch.
+
+- `git checkout` : It is used to switch to a different branch.
+
+- `git merge` : It is used to merge two branches.
+
+- `git mergetool` : It is used to resolve merge conflicts.
+
+- `git log` : It is used to view the commit history.
+
+---
+
+
+
+> Check Out my github for the exact solutions :- [
+https://github.com/pranay2702/missing-sem
+](https://github.com/pranay2702/missing-sem)
+
+
+
+

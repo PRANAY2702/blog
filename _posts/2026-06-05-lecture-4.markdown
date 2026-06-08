@@ -8,7 +8,7 @@ tags: [shell, bash, scripting, linux, interview]
 
 
 
-For Notes and Videos Checkout :- [`https://missing.csail.mit.edu/2026/development-environment/`](https://missing.csail.mit.edu/2026/development-environment/)
+For Notes and Videos Checkout :- [`https://missing.csail.mit.edu/2026/debugging-profiling/`](https://missing.csail.mit.edu/2026/debugging-profiling/)
 
 ---
 
