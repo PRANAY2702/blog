@@ -1,0 +1,266 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 3 "
+date:   2026-06-15 17:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+
+# AION OS Development Log – Day 3
+
+## Objective
+
+Today's goal was to move beyond passive workspace monitoring and implement active workspace management inside the kernel. Specifically, I wanted to enable runtime migration of processes between AION workspaces using a procfs control interface.
+
+---
+
+## What I Built
+
+### 1. Workspace Monitoring Interface
+
+Previously, I had already implemented:
+
+```text
+/proc/aion_workspace
+```
+
+This procfs file displays:
+
+* Workspace ID
+* Trust Level
+* Number of Processes
+
+Example:
+
+```text
+WS=0 TRUST=50 PROCESSES=776
+WS=1 TRUST=50 PROCESSES=2
+...
+```
+
+This provides a real-time view of the workspace subsystem.
+
+---
+
+### 2. Process Migration Control Interface
+
+I implemented a new procfs endpoint:
+
+```text
+/proc/aion_control
+```
+
+This allows runtime commands to be sent from userspace into the kernel.
+
+The control interface currently supports:
+
+```bash
+echo "move PID WORKSPACE" > /proc/aion_control
+```
+
+Example:
+
+```bash
+echo "move 6260 1" > /proc/aion_control
+```
+
+---
+
+### 3. Runtime Process Migration
+
+Inside the kernel, I implemented logic that:
+
+1. Finds a process using its PID.
+2. Retrieves its current workspace.
+3. Updates workspace accounting.
+4. Assigns the process to a new workspace.
+
+Kernel log example:
+
+```text
+AION: moving PID=6260 WS 1 -> 1
+```
+
+This confirms the migration request reached the kernel and was processed.
+
+---
+
+## Debugging Challenges
+
+### Invalid Command Errors
+
+Initially every migration attempt failed with:
+
+```text
+AION: invalid command
+```
+
+I discovered that I was debugging the wrong source file.
+
+The system actually contained:
+
+```text
+kernel/aion/aion_proc.c
+```
+
+and
+
+```text
+kernel/aion/aion_control.c
+```
+
+The control interface logic lived in:
+
+```text
+kernel/aion/aion_control.c
+```
+
+The parser expected:
+
+```text
+move PID WORKSPACE
+```
+
+while I was sending:
+
+```text
+PID WORKSPACE
+```
+
+After identifying the parser requirements, process migration started working correctly.
+
+---
+
+### Kernel Source Investigation
+
+To trace the issue I used:
+
+```bash
+grep -R -n "control interface ready" kernel/
+```
+
+which led me to the correct source file.
+
+This reinforced the importance of tracing runtime log messages back to their implementation rather than assuming which file contains the functionality.
+
+---
+
+## Current AION Architecture
+
+### Workspace Subsystem
+
+Each workspace contains:
+
+```c
+struct aion_workspace {
+    int id;
+    int trust_level;
+    int process_count;
+};
+```
+
+Current configuration:
+
+* 32 workspaces
+* Default trust level: 50
+* Dynamic process accounting
+
+---
+
+### Process Metadata
+
+Every process now contains:
+
+```c
+int workspace_id;
+int trust_level;
+```
+
+inside:
+
+```text
+include/linux/sched.h
+```
+
+This extends Linux task structures with AION-specific metadata.
+
+---
+
+## Features Completed So Far
+
+### Process Creation Tracking
+
+* Workspace inheritance
+* Trust inheritance
+* Process accounting
+
+### Process Exit Tracking
+
+* Workspace counters updated on exit
+
+### Workspace Monitoring
+
+```text
+/proc/aion_workspace
+```
+
+### Process Migration
+
+```text
+/proc/aion_control
+```
+
+### Runtime Workspace Management
+
+```bash
+echo "move PID WS"
+```
+
+---
+
+## What I Learned
+
+Today reinforced several important kernel development concepts:
+
+* Procfs interfaces
+* Userspace-to-kernel communication
+* PID lookup mechanisms
+* Kernel debugging through dmesg
+* Source tracing using grep
+* Runtime kernel state management
+
+Most importantly, I learned that effective kernel debugging is often about verifying assumptions. The bug wasn't in the migration logic—it was that I was investigating the wrong source file.
+
+---
+
+## Next Steps
+
+The next milestone is implementing configurable workspace trust levels.
+
+Planned command:
+
+```bash
+echo "trust 2 90" > /proc/aion_control
+```
+
+Expected result:
+
+```text
+WS=2 TRUST=90 PROCESSES=1
+```
+
+This will transform trust levels from static values into runtime-managed security attributes and move AION closer to becoming a trust-aware operating system.
+
+---
+
+## Status
+
+AION OS now supports:
+
+* Workspace-aware process management
+* Runtime process migration
+* Process accounting
+* Trust metadata
+* Kernel control interfaces
+
+The project is evolving from a collection of kernel patches into a coherent operating system architecture.
