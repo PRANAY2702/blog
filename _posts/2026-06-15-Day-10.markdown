@@ -252,7 +252,7 @@ WS=2 TRUST=90 PROCESSES=1
 This will transform trust levels from static values into runtime-managed security attributes and move AION closer to becoming a trust-aware operating system.
 
 ---
-
+ 
 ## Status
 
 AION OS now supports:
