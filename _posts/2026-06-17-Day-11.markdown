@@ -1,0 +1,329 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 11 "
+date:   2026-06-15 15:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+
+# AION OS Development Log – Day 4
+
+## Objective
+
+Today's goal was to evolve AION from a monitoring framework into a system capable of enforcing security policies. Up to this point, workspaces and trust levels existed primarily as metadata. The focus today was to make those concepts influence actual kernel behavior.
+
+---
+
+## What I Built
+
+### 1. Runtime Trust Management
+
+Previously, workspace trust values were fixed during initialization.
+
+I implemented support for dynamically modifying workspace trust levels through the AION control interface:
+
+```bash
+echo "trust 2 90" > /proc/aion_control
+```
+
+This allows authorized administrators to update trust levels without rebooting or recompiling the kernel.
+
+Example:
+
+```text
+WS=2 TRUST=90
+```
+
+---
+
+### 2. Administrative Protection
+
+Trust levels are security-sensitive settings and should not be modified by ordinary users.
+
+To enforce this, I integrated Linux capability checks:
+
+```c
+if (!capable(CAP_SYS_ADMIN))
+        return -EPERM;
+```
+
+This restricts trust modifications to administrative users.
+
+The design mirrors how production operating systems protect critical system configuration.
+
+---
+
+### 3. Trust Inheritance
+
+A major limitation of the earlier design was that workspace trust and process trust were independent.
+
+I implemented trust inheritance during workspace migration.
+
+When a process moves into a workspace:
+
+```bash
+echo "move PID 2" > /proc/aion_control
+```
+
+the process automatically inherits:
+
+```text
+workspace trust → process trust
+```
+
+Example:
+
+```text
+Workspace 2 = TRUST 90
+Process moved into Workspace 2
+Process TRUST becomes 90
+```
+
+This transforms trust from static metadata into a meaningful security attribute.
+
+---
+
+### 4. Process Visibility Interface
+
+To inspect individual process state, I created:
+
+```text
+/proc/aion_processes
+```
+
+This interface iterates over all processes and displays:
+
+* PID
+* Process name
+* Workspace ID
+* Trust level
+
+Example:
+
+```text
+PID=1 NAME=systemd WS=0 TRUST=50
+PID=2345 NAME=bash WS=2 TRUST=90
+PID=6789 NAME=python WS=1 TRUST=50
+```
+
+This significantly improves observability and debugging.
+
+---
+
+### 5. Workspace Isolation Policy
+
+The biggest milestone today was implementing the first real AION security policy.
+
+I modified the Linux signal permission path inside:
+
+```text
+kernel/signal.c
+```
+
+specifically:
+
+```c
+check_kill_permission()
+```
+
+The new policy:
+
+```text
+Processes may signal each other only when:
+
+1. They belong to the same workspace
+
+OR
+
+2. The sender has trust >= 90
+```
+
+This introduces workspace-based isolation into the kernel.
+
+Example:
+
+```text
+WS1 → WS1 = Allowed
+WS1 → WS2 = Denied
+WS2 (Trust 95) → WS1 = Allowed
+```
+
+---
+
+## Technical Concepts Explored
+
+Today involved deeper kernel development topics:
+
+* Linux capability system
+* Kernel security enforcement
+* Process trust inheritance
+* Process enumeration
+* Procfs interfaces
+* Signal delivery internals
+* Permission checking in kernel space
+* Security policy design
+
+---
+
+## Debugging Challenges
+
+During development I discovered that parts of the migration logic had accidentally been removed while refactoring.
+
+The process lookup existed:
+
+```c
+task = pid_task(...)
+```
+
+but no workspace update occurred afterward.
+
+By tracing execution paths and reviewing the control interface implementation, I restored the migration logic and extended it to support trust inheritance.
+
+This highlighted the importance of verifying behavior after every refactor.
+
+---
+
+## Current AION Architecture
+
+### Process Metadata
+
+```c
+struct task_struct
+{
+        ...
+        int workspace_id;
+        int trust_level;
+};
+```
+
+---
+
+### Workspace Metadata
+
+```c
+struct aion_workspace
+{
+        int id;
+        int trust_level;
+        int process_count;
+};
+```
+
+---
+
+### Kernel Interfaces
+
+Monitoring:
+
+```text
+/proc/aion_workspace
+```
+
+Process Inspection:
+
+```text
+/proc/aion_processes
+```
+
+Control:
+
+```text
+/proc/aion_control
+```
+
+---
+
+## Features Completed
+
+### Workspace System
+
+* Workspace initialization
+* Workspace accounting
+* Process membership tracking
+
+### Trust System
+
+* Trust metadata
+* Runtime trust updates
+* Administrative protection
+* Trust inheritance
+
+### Process Management
+
+* Runtime process migration
+* Process inspection
+* Process tracking
+
+### Security
+
+* Workspace isolation policy
+* Signal permission enforcement
+* Trust-based override mechanism
+
+---
+
+## What I Learned
+
+The most important lesson today was the difference between:
+
+```text
+Metadata
+```
+
+and
+
+```text
+Enforcement
+```
+
+A security system becomes meaningful only when its metadata affects system behavior.
+
+By integrating workspace and trust checks into the kernel signal path, AION took its first step toward becoming an actual security-oriented operating system rather than simply a process-monitoring framework.
+
+---
+
+## Next Steps
+
+The next major milestone is expanding policy enforcement beyond signals.
+
+Possible directions include:
+
+### File Access Controls
+
+Restrict file access across workspaces.
+
+### Network Policies
+
+Allow network operations only for trusted workspaces.
+
+### Scheduler Integration
+
+Prioritize CPU time based on trust levels.
+
+### Security Roles
+
+Replace Linux administrator checks with AION-native roles:
+
+```text
+USER
+DEVELOPER
+ADMIN
+SECURITY
+```
+
+This would make AION self-governing rather than relying on Linux capabilities.
+
+---
+
+## Status
+
+AION now supports:
+
+* Workspace-aware processes
+* Runtime workspace management
+* Trust inheritance
+* Process inspection
+* Administrative trust controls
+* Kernel-enforced workspace isolation
+
+This is the first version of AION where trust and workspace membership directly influence kernel behavior.
