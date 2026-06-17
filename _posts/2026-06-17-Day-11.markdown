@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "AION OS Development Log – Day 11 "
-date:   2026-06-15 15:00:00 +0530
+date:   2026-06-17 15:00:00 +0530
 categories:  Kernel , shell
 tags: [ kernel, shell , os]
 ---
