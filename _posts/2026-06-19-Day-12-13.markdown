@@ -1,0 +1,209 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 12–13 "
+date:   2026-06-19 15:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# AION Development Log — Signal Isolation Verification & Audit Framework
+
+## Overview
+
+Today focused on validating AION's workspace isolation model and expanding the audit framework. The primary objective was to verify that processes belonging to different workspaces cannot interfere with each other through Linux signals, while maintaining a complete audit trail of security-related events.
+
+---
+
+## Signal Isolation Implementation
+
+The signal subsystem was modified inside `kernel/signal.c` by extending the `check_kill_permission()` path.
+
+The enforcement policy is straightforward:
+
+* Processes may freely communicate within the same workspace.
+* Processes attempting to signal a task in a different workspace are denied if their trust level is below the privileged threshold.
+* Violations are logged into the AION audit subsystem.
+
+Implementation logic:
+
+```c
+if (current->workspace_id != t->workspace_id &&
+    current->trust_level < 90)
+{
+        return -EPERM;
+}
+```
+
+This introduces workspace-level process isolation directly into the Linux signal delivery path.
+
+---
+
+## Debugging and Verification
+
+Initial testing produced an unexpected result.
+
+Although `kill -9` returned:
+
+```text
+Operation not permitted
+```
+
+the expected kernel log message was not visible through `dmesg`.
+
+To investigate:
+
+1. Additional debug traces were added inside `check_kill_permission()`.
+2. Workspace identifiers and trust levels were printed.
+3. Runtime behaviour was inspected through kernel logs.
+
+Observed output:
+
+```text
+AION DEBUG current=6540 ws=0 target=6533 ws=1 trust=50
+```
+
+This confirmed that:
+
+* Source process belonged to Workspace 0.
+* Target process belonged to Workspace 1.
+* Trust level remained below the privileged threshold.
+
+The isolation logic was executing correctly.
+
+---
+
+## Audit Framework Enhancement
+
+The audit subsystem was extended to record security events through a dedicated `/proc/aion_audit` interface.
+
+Supported events now include:
+
+* Process migration
+* Trust modifications
+* Signal denials
+* File protection violations
+
+Example audit entry:
+
+```text
+[2026-06-19 10:53:28]
+SIGNAL_DENIED sender=6540 target=6533 ws=0->1 trust=50
+```
+
+This serves as persistent evidence that a security policy was triggered and enforced.
+
+---
+
+## Date-Based Logging
+
+The audit system was improved to generate human-readable timestamps.
+
+Instead of raw epoch values:
+
+```text
+1781855538
+```
+
+logs now appear as:
+
+```text
+2026-06-19 10:53:28
+```
+
+This significantly improves audit readability and incident investigation.
+
+---
+
+## Successful Isolation Test
+
+Test procedure:
+
+1. Move Process A to Workspace 0.
+2. Move Process B to Workspace 1.
+3. Attempt to terminate Process B from Process A.
+
+Commands:
+
+```bash
+echo "move <pidA> 0" > /proc/aion_control
+echo "move <pidB> 1" > /proc/aion_control
+
+kill -9 <pidB>
+```
+
+Result:
+
+```text
+Operation not permitted
+```
+
+Audit result:
+
+```text
+SIGNAL_DENIED sender=<pidA> target=<pidB>
+```
+
+The feature is considered verified and operational.
+
+---
+
+## Storage Investigation
+
+A storage review was conducted due to concerns regarding available development space.
+
+Current system state:
+
+```text
+Disk Size : 79 GB
+Used      : 43 GB
+Free      : 32 GB
+```
+
+Conclusion:
+
+Storage is not currently a project risk.
+
+No major cleanup actions are required at this stage.
+
+---
+
+## Key Lessons Learned
+
+Today's work reinforced several important kernel-development concepts:
+
+* Signal delivery is controlled through `check_kill_permission()`.
+* Security enforcement should occur before action execution.
+* Audit logging is as important as enforcement.
+* Runtime debugging is essential when kernel behaviour differs from expectations.
+* Security features require both prevention and accountability mechanisms.
+
+---
+
+## Current Project Status
+
+Completed Components:
+
+* Workspace Management
+* Trust Management
+* Administrative Trust Control
+* Process Migration
+* Trust Inheritance
+* File Write Protection
+* Signal Isolation
+* Audit Logging Framework
+
+AION has now evolved from a workspace management prototype into a functioning kernel-level security framework capable of enforcing trust-aware isolation policies.
+
+---
+
+## Next Development Goal
+
+Implement workspace security statistics:
+
+```text
+WS=1 TRUST=90 PROCESSES=3
+BLOCKED_SIGNALS=12
+BLOCKED_WRITES=5
+```
+
+This will provide measurable security metrics and improve system observability for demonstrations and evaluation.
+
