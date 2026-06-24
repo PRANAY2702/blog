@@ -1,0 +1,361 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 4"
+date:   2026-06-06 12:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 4 – Creating the AION Subsystem
+
+After successfully extending Linux processes with `workspace_id` and `trust_level`, I finally reached a point where AION needed its own identity inside the kernel.
+
+Until now, AION was just an idea attached to Linux processes.
+
+The metadata existed, but there was no actual subsystem managing it.
+
+Today's goal was simple:
+
+> Create a dedicated AION subsystem inside the Linux kernel.
+
+This was the day AION stopped being a concept and started becoming a real kernel component.
+
+---
+
+## The Problem
+
+At this stage, the AION-related code was scattered.
+
+The new fields existed inside:
+
+```text id="d4a1"
+include/linux/sched.h
+```
+
+but there was no place to put:
+
+* Workspace management logic
+* Trust management
+* Process tracking
+* Future security policies
+
+I needed a dedicated location where all AION functionality could live.
+
+---
+
+## Understanding How Linux Organizes Code
+
+Before creating anything, I spent time studying how Linux organizes its own subsystems.
+
+I noticed a pattern.
+
+Large kernel components usually have their own directories.
+
+Examples:
+
+```text id="d4a2"
+kernel/
+mm/
+net/
+security/
+```
+
+Each subsystem is isolated and responsible for its own functionality.
+
+This immediately influenced my design.
+
+Rather than placing AION code randomly throughout the kernel, I wanted AION to have its own home.
+
+---
+
+## Creating kernel/aion
+
+I created a new directory:
+
+```text id="d4a3"
+kernel/aion/
+```
+
+It was a very small change.
+
+Just a folder.
+
+But psychologically it felt important.
+
+For the first time, AION existed as a first-class component inside the Linux source tree.
+
+The structure initially looked like:
+
+```text id="d4a4"
+kernel/aion/
+
+├── Makefile
+├── aion_workspace.c
+└── aion_workspace.h
+```
+
+At this point, all files were mostly empty placeholders.
+
+Still, seeing the directory appear inside the kernel source tree felt incredibly rewarding.
+
+---
+
+## Learning How Kernel Build Integration Works
+
+Creating a folder is easy.
+
+Getting Linux to compile it is harder.
+
+The Linux kernel build system does not automatically compile new directories.
+
+I had to learn how Kbuild works.
+
+This led me into a completely different area of kernel development.
+
+I spent several hours reading existing Makefiles and understanding how Linux decides what gets compiled.
+
+At first, the build system felt almost magical.
+
+A tiny mistake in a Makefile could prevent the kernel from finding source files.
+
+---
+
+## My First AION Makefile
+
+Inside:
+
+```text id="d4a5"
+kernel/aion/Makefile
+```
+
+I added build instructions for AION.
+
+The goal was straightforward:
+
+When Linux builds, it should also build AION.
+
+Although the Makefile itself was small, it represented something important.
+
+For the first time, AION became part of the kernel build process.
+
+---
+
+## Connecting AION to the Kernel
+
+The next challenge was making Linux aware that the new directory existed.
+
+Simply creating:
+
+```text id="d4a6"
+kernel/aion/
+```
+
+was not enough.
+
+I had to modify the kernel build configuration so that:
+
+```text id="d4a7"
+kernel/
+```
+
+would descend into:
+
+```text id="d4a8"
+kernel/aion/
+```
+
+during compilation.
+
+This required understanding how Linux recursively builds subsystems.
+
+The process involved a lot of experimentation.
+
+Several builds failed because of incorrect Makefile configuration.
+
+Every failure taught me something new about Kbuild.
+
+---
+
+## The First Successful AION Build
+
+Eventually, after several attempts, the build completed successfully.
+
+This was another major milestone.
+
+Not because AION had functionality.
+
+It still didn't.
+
+But because Linux now recognized AION as part of the operating system.
+
+During compilation, the build system entered:
+
+```text id="d4a9"
+kernel/aion/
+```
+
+and generated object files from AION source code.
+
+That moment felt like a huge victory.
+
+AION was officially inside the kernel.
+
+---
+
+## Creating aion_workspace.h
+
+With the subsystem integrated, I started thinking about the first major component:
+
+Workspace Management.
+
+Before implementing anything, I created:
+
+```text id="d4a10"
+aion_workspace.h
+```
+
+This file would contain:
+
+* Workspace definitions
+* Constants
+* Function declarations
+
+At this stage, it was mostly a skeleton.
+
+The goal was not implementation yet.
+
+The goal was organization.
+
+---
+
+## Creating aion_workspace.c
+
+Next came:
+
+```text id="d4a11"
+aion_workspace.c
+```
+
+This file would eventually become the heart of AION.
+
+Future responsibilities would include:
+
+* Workspace storage
+* Process tracking
+* Trust management
+* Statistics
+
+Right now it contained almost nothing.
+
+But it represented the beginning of the Workspace subsystem.
+
+---
+
+## Thinking About the Future
+
+One interesting realization today was how much future work depended on this design.
+
+Every major feature I had planned relied on workspaces.
+
+Examples included:
+
+```text id="d4a12"
+Process Migration
+Signal Isolation
+Trust Enforcement
+Security Auditing
+File Protection
+```
+
+All of them would eventually depend on the workspace manager.
+
+This made me realize that getting the architecture right was more important than rushing implementation.
+
+---
+
+## Challenges Faced
+
+The hardest part today was not coding.
+
+It was understanding the Linux build system.
+
+I spent more time reading Makefiles than writing actual functionality.
+
+Some builds failed simply because the kernel did not know where to find my new source files.
+
+The debugging process was frustrating but extremely educational.
+
+---
+
+## What I Learned
+
+Today's biggest lesson was:
+
+> A kernel subsystem is more than source code.
+
+A subsystem needs:
+
+* Source files
+* Headers
+* Build integration
+* Proper organization
+
+Creating a well-structured subsystem early prevents many problems later.
+
+I also learned significantly more about:
+
+* Kbuild
+* Kernel Makefiles
+* Build dependencies
+* Source tree organization
+
+---
+
+## Why Today Matters
+
+Today was the day AION became a real part of Linux.
+
+Before today:
+
+```text id="d4a13"
+AION = Process Metadata
+```
+
+After today:
+
+```text id="d4a14"
+AION = Kernel Subsystem
+```
+
+That distinction is important.
+
+The project now had a dedicated home, a build process, and a structure capable of supporting future development.
+
+---
+
+## Progress Today
+
+- Created `kernel/aion/`
+
+- Integrated AION into Kbuild
+
+- Created AION Makefile
+
+- Created `aion_workspace.c`
+
+- Created `aion_workspace.h`
+
+- Successfully compiled AION as part of Linux
+
+---
+
+## Key Learning
+
+Good architecture is built before functionality.
+
+Creating a dedicated subsystem today will make every future feature easier to develop and maintain.
+
+---
+
+## Tomorrow's Goal
+
+Design the Workspace architecture and define what information each workspace should contain before implementing the actual workspace manager.

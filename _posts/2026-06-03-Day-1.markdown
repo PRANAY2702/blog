@@ -1,0 +1,77 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 1"
+date:   2026-06-03 12:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+
+# Day 1 – The Beginning of AION
+
+Today marked the beginning of what would eventually become AION, a workspace-based security framework built directly inside the Linux kernel.
+
+For a long time, I had been curious about operating systems. As developers, we spend most of our time writing applications that run on top of the OS, but very rarely do we get the chance to modify the operating system itself. I wanted to understand what happens underneath the applications we use every day.
+
+The initial idea was simple: build a security framework that could organize processes into isolated workspaces and assign different trust levels to them. At this stage, I had no implementation plan. I only had a concept and a lot of questions.
+
+The first challenge was understanding the Linux kernel source tree. When I downloaded the source code and opened it for the first time, I was overwhelmed. There were thousands of files spread across dozens of directories.
+
+I spent several hours exploring folders such as:
+
+```text
+kernel/
+fs/
+mm/
+drivers/
+include/
+net/
+arch/
+```
+
+Initially, everything looked confusing. I did not know where process management lived, where filesystems were implemented, or how Linux organized its internal components.
+
+Instead of trying to code immediately, I decided to focus on understanding the architecture.
+
+One of the biggest realizations today was that Linux is not one giant program. It is a collection of specialized subsystems that work together. Process management, memory management, filesystems, networking, and device drivers are all separate components with clearly defined responsibilities.
+
+Understanding this changed how I thought about AION.
+
+Rather than scattering modifications throughout the kernel, I decided that AION should become its own subsystem with clearly defined responsibilities.
+
+I also spent time setting up a dedicated VMware virtual machine for development. Kernel development is risky. A single mistake can prevent the operating system from booting. Using a virtual machine would allow me to experiment freely without damaging my main system.
+
+By the end of the day, I had not written any AION code yet, but I had achieved something equally important: I had transformed a vague idea into a structured project.
+
+The core concepts I wrote down were:
+
+* Workspaces
+* Trust Levels
+* Process Isolation
+* Kernel-Level Enforcement
+* Security Auditing
+
+These concepts would become the foundation of everything built later.
+
+The biggest lesson from today was that successful kernel development begins with understanding architecture rather than writing code.
+
+## Progress Today
+
+- Set up VMware development environment
+- Downloaded Linux source code
+- Explored kernel architecture
+- Defined the AION vision
+- Designed initial security concepts
+
+## Challenges Faced
+
+* Understanding the massive Linux source tree
+* Identifying where custom functionality should live
+* Learning kernel terminology and subsystem boundaries
+
+## Key Learning
+
+Before modifying an operating system, it is essential to understand how the operating system is organized internally.
+
+## Tomorrow's Goal
+
+Compile and boot a custom Linux kernel for the first time.

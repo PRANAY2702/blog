@@ -1,0 +1,356 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 5"
+date:   2026-06-08 12:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+
+# Day 5 – Designing the Workspace Architecture
+
+After creating the AION subsystem and integrating it into the Linux kernel build system, it was finally time to start designing the first real feature of the project.
+
+Up until now, AION had a dedicated subsystem, custom process metadata, and a place inside the kernel source tree.
+
+However, none of it actually did anything.
+
+Today's objective was different.
+
+Instead of writing large amounts of code, I focused on answering a very important question:
+
+> What exactly is a Workspace?
+
+The answer to this question would determine how every future AION feature would work.
+
+---
+
+## Understanding the Problem
+
+AION is built around the concept of Workspaces.
+
+Every process in the system would eventually belong to one.
+
+Future security decisions would depend on them.
+
+Examples:
+
+```text id="d5a1"
+Can Process A signal Process B?
+
+Can Process A access a protected file?
+
+Can Process A interact with another workspace?
+
+Should Process A inherit a trust level?
+```
+
+All of these questions require a workspace model.
+
+Before implementing anything, I needed to understand what information a workspace should contain.
+
+---
+
+## Thinking Like an Operating System Designer
+
+One mistake I wanted to avoid was building unnecessary complexity.
+
+When designing systems, there is a temptation to include every possible feature immediately.
+
+I considered adding:
+
+```text id="d5a2"
+Permissions
+Access Control Lists
+Process Lists
+Resource Limits
+Audit Counters
+Security Policies
+```
+
+But I quickly realized that would create a complicated design before proving the basic idea worked.
+
+Instead, I focused on the minimum information required.
+
+---
+
+## The First Workspace Design
+
+After several iterations, I settled on three core attributes.
+
+Every workspace would have:
+
+### Workspace ID
+
+A unique identifier.
+
+Example:
+
+```text id="d5a3"
+Workspace 0
+Workspace 1
+Workspace 2
+Workspace 3
+```
+
+This allows the kernel to distinguish between security domains.
+
+---
+
+### Trust Level
+
+A numerical representation of how trusted a workspace is.
+
+Example:
+
+```text id="d5a4"
+0   = Untrusted
+50  = Standard
+90  = Trusted
+100 = System
+```
+
+This value would later drive security decisions.
+
+---
+
+### Process Count
+
+A count of how many processes belong to the workspace.
+
+Example:
+
+```text id="d5a5"
+Workspace 0 → 5 Processes
+Workspace 1 → 2 Processes
+Workspace 2 → 17 Processes
+```
+
+This provides visibility into workspace activity.
+
+---
+
+## Defining the Structure
+
+With the design finalized, I created the first real AION data structure.
+
+Inside:
+
+```text id="d5a6"
+aion_workspace.h
+```
+
+I defined:
+
+```c id="d5a7"
+struct aion_workspace {
+        int id;
+        int trust_level;
+        int process_count;
+};
+```
+
+This structure became the foundation of the entire AION project.
+
+Although it contains only three fields, almost every future feature depends on it.
+
+---
+
+## Why This Design Matters
+
+At first glance, the structure appears extremely simple.
+
+Only three integers.
+
+However, those three integers represent:
+
+```text id="d5a8"
+Identity
+Trust
+Membership
+```
+
+Together, they define a security domain.
+
+This is the first time AION gained a concrete representation of security boundaries.
+
+---
+
+## Thinking About Workspace Ownership
+
+An interesting question appeared during design:
+
+> Should a workspace directly store every process inside it?
+
+Initially, that sounded reasonable.
+
+Something like:
+
+```text id="d5a9"
+Workspace
+ ├── Process A
+ ├── Process B
+ └── Process C
+```
+
+However, storing process references would introduce several complications:
+
+* Process lifetime tracking
+* Synchronization
+* Memory management
+* Cleanup logic
+
+I decided against it.
+
+Instead, Linux processes would already know which workspace they belong to through:
+
+```c id="d5a10"
+workspace_id
+```
+
+The workspace itself would simply maintain statistics.
+
+This dramatically simplified the design.
+
+---
+
+## Defining Workspace Limits
+
+Another important design decision involved scale.
+
+How many workspaces should AION support?
+
+Since this was an experimental framework, I chose a fixed limit.
+
+Something similar to:
+
+```c id="d5a11"
+#define AION_MAX_WORKSPACES
+```
+
+This approach simplified implementation and avoided dynamic memory allocation.
+
+At this stage, flexibility was less important than stability.
+
+---
+
+## Thinking Ahead
+
+One of the most valuable parts of today's work was considering future requirements.
+
+I started mapping upcoming features onto the workspace design.
+
+For example:
+
+### Process Migration
+
+```text id="d5a12"
+Process moves from Workspace 0 → Workspace 1
+```
+
+The process count must update automatically.
+
+---
+
+### Trust Management
+
+```text id="d5a13"
+Workspace 1 trust changes from 50 → 90
+```
+
+The trust level field already supports this.
+
+---
+
+### Security Enforcement
+
+```text id="d5a14"
+Workspace A interacts with Workspace B
+```
+
+The IDs allow comparison between security domains.
+
+---
+
+This confirmed that the design could support future development.
+
+---
+
+## Challenges Faced
+
+Today's challenge was not implementation.
+
+The challenge was restraint.
+
+I constantly found myself wanting to add additional fields and features.
+
+However, good system design often involves deciding what not to build.
+
+Keeping the structure small and focused was the right decision.
+
+---
+
+## What I Learned
+
+The most important lesson today was:
+
+> Security systems begin with data models.
+
+Before enforcing policies, the operating system must understand what it is protecting.
+
+The workspace structure became that model.
+
+I also learned that simplicity is often more powerful than complexity.
+
+A small, well-designed structure can support many advanced features later.
+
+---
+
+## Why Today Matters
+
+Every future AION component depends on the workspace architecture designed today.
+
+Without this structure:
+
+```text id="d5a15"
+Process Migration
+Trust Management
+Signal Isolation
+Audit Logging
+Workspace Monitoring
+```
+
+would not be possible.
+
+Today established the conceptual foundation of the entire framework.
+
+---
+
+## Progress Today
+
+- Designed Workspace architecture
+
+- Defined workspace responsibilities
+
+- Created `struct aion_workspace`
+
+- Added Workspace ID
+
+- Added Trust Level
+
+- Added Process Count
+
+- Defined future scalability model
+
+---
+
+## Key Learning
+
+Strong operating system features start with strong data structures.
+
+The quality of future implementations often depends on decisions made during the design phase.
+
+---
+
+## Tomorrow's Goal
+
+Implement actual workspace storage inside `aion_workspace.c` and create the internal workspace table that will manage all AION workspaces.

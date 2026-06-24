@@ -1,0 +1,311 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 3"
+date:   2026-06-05 12:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 3 – Understanding Linux Processes and Finding a Home for AION
+
+After successfully compiling and booting my own Linux kernel, I finally felt ready to start modifying the operating system itself.
+
+However, before building any security features, I needed to answer a fundamental question:
+
+> Where should AION store its security information?
+
+The entire concept of AION revolves around processes.
+
+Every security decision I planned to make in the future would involve processes:
+
+* Which workspace does this process belong to?
+* How trusted is this process?
+* Can this process interact with another process?
+* Can this process access a protected resource?
+
+To answer these questions, I first needed to understand how Linux represents processes internally.
+
+---
+
+## My First Deep Dive into Kernel Internals
+
+I began exploring process management inside the Linux kernel.
+
+At first, I assumed there might be a simple "process structure" somewhere.
+
+I was right.
+
+Eventually, I discovered one of the most important structures in the entire Linux kernel:
+
+```text id="s2j9bw"
+task_struct
+```
+
+This structure represents a process inside Linux.
+
+Every running process on the system is represented by its own instance of `task_struct`.
+
+When I realized this, it felt like discovering the central nervous system of Linux.
+
+---
+
+## Exploring task_struct
+
+I found the structure inside:
+
+```text id="3v1jjs"
+include/linux/sched.h
+```
+
+The file was enormous.
+
+Scrolling through it revealed hundreds of fields.
+
+Some examples included:
+
+```text id="n2e6nk"
+pid
+state
+parent
+mm
+comm
+signal
+cred
+```
+
+Each field represented some aspect of a running process.
+
+The more I read, the more I realized:
+
+> If AION needed process-level security information, task_struct was the right place.
+
+---
+
+## The First Major Design Decision
+
+At this point, I had several options.
+
+### Option 1
+
+Maintain a separate AION process database.
+
+Problems:
+
+* Extra lookup overhead
+* Synchronization complexity
+* Harder integration with kernel code
+
+### Option 2
+
+Attach AION metadata directly to each process.
+
+Benefits:
+
+* Fast access
+* Simpler implementation
+* Naturally integrated into Linux
+
+After thinking about it, the decision became obvious.
+
+AION metadata should live inside the process itself.
+
+---
+
+## Designing Process Metadata
+
+I started defining the information that every process should carry.
+
+The first version of the design included:
+
+### Workspace ID
+
+Identifies which workspace owns the process.
+
+Example:
+
+```text id="qu44y9"
+Workspace 0
+Workspace 1
+Workspace 2
+```
+
+### Trust Level
+
+Represents how trusted the process is.
+
+Example:
+
+```text id="8tq1bp"
+0   = untrusted
+50  = normal
+90  = highly trusted
+100 = system
+```
+
+These two values would become the foundation of AION's security model.
+
+---
+
+## My First Real Kernel Modification
+
+After deciding on the design, I finally modified Linux source code.
+
+Inside:
+
+```text id="7l6o65"
+include/linux/sched.h
+```
+
+I added:
+
+```c id="ikjlwm"
+int workspace_id;
+int trust_level;
+```
+
+to the Linux process structure.
+
+This was the first moment where Linux itself started changing to accommodate AION.
+
+Every process in the system now had space reserved for AION metadata.
+
+Although these fields were not used yet, they officially became part of the operating system.
+
+---
+
+## The Fear of Breaking Everything
+
+Modifying `sched.h` was intimidating.
+
+Unlike adding a new source file, changing a core kernel structure affects a huge portion of the operating system.
+
+Many subsystems interact with `task_struct`.
+
+A mistake here could easily break compilation across hundreds of files.
+
+Before rebuilding, I genuinely wondered:
+
+> Did I just break the kernel?
+
+---
+
+## Rebuilding the Kernel
+
+After making the modifications, I started another build.
+
+The compile process took longer than expected.
+
+Because `sched.h` is included throughout the kernel, many files needed recompilation.
+
+Watching thousands of lines of output scroll past became a familiar experience.
+
+Eventually the build completed successfully.
+
+That success was incredibly reassuring.
+
+It confirmed:
+
+* The new fields were valid.
+* Linux accepted the modifications.
+* AION metadata could exist inside processes.
+
+---
+
+## Verifying the Design
+
+At this stage there was no visible functionality.
+
+Users could not see workspaces.
+
+Trust levels were not yet used.
+
+Nothing looked different from the outside.
+
+But internally, Linux processes had changed.
+
+Every process now carried AION-specific information.
+
+This was an invisible milestone, but an extremely important one.
+
+Future features would rely on these fields constantly.
+
+Without them, AION could not exist.
+
+---
+
+## What I Learned About Operating Systems
+
+Today taught me an important lesson:
+
+> Most operating system features start with data structures.
+
+Before implementing behavior, permissions, policies, or isolation mechanisms, the operating system needs a way to represent information.
+
+Adding two integers may seem trivial, but those two integers fundamentally changed what Linux processes could represent.
+
+From this point forward, every process could belong to a workspace and possess a trust level.
+
+That capability did not exist before.
+
+---
+
+## Challenges Faced
+
+Today's biggest challenges included:
+
+* Understanding a massive kernel structure
+* Identifying the correct location for AION metadata
+* Avoiding modifications that would break unrelated subsystems
+* Rebuilding the kernel after changing a widely used header
+
+The learning curve remained steep, but it was becoming manageable.
+
+---
+
+## Why Today Matters
+
+Many future AION features depend directly on the fields added today:
+
+```text id="r9skja"
+workspace_id
+trust_level
+```
+
+Future components will use them for:
+
+* Process migration
+* Workspace isolation
+* Signal filtering
+* Trust management
+* Security auditing
+
+Today laid the foundation for all of those systems.
+
+---
+
+## Progress Today
+
+- Learned Linux process representation
+
+- Explored task_struct
+
+- Identified storage location for AION metadata
+
+- Added workspace_id
+
+- Added trust_level
+
+- Successfully rebuilt kernel
+
+---
+
+## Key Learning
+
+Operating system development begins with designing the right data structures.
+
+A well-designed structure makes future features dramatically easier to implement.
+
+---
+
+## Tomorrow's Goal
+
+Create the actual AION subsystem inside the kernel and establish a dedicated home for all future AION components.

@@ -1,0 +1,354 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 6"
+date:   2026-06-09 12:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 6 – Implementing Workspace Storage in the Kernel
+
+After spending the previous day designing the Workspace architecture, it was finally time to turn the design into a working implementation.
+
+Until now, workspaces only existed as a structure definition inside a header file.
+
+I had:
+
+```c id="d6a1"
+struct aion_workspace {
+        int id;
+        int trust_level;
+        int process_count;
+};
+```
+
+but there was no actual storage.
+
+No workspaces existed in memory.
+
+No workspace manager existed.
+
+No process could belong to a workspace.
+
+Today's goal was to change that.
+
+> Create the internal workspace database that would become the backbone of AION.
+
+---
+
+## The First Question: Where Should Workspaces Live?
+
+The first challenge was deciding how the kernel should store workspaces.
+
+Several options were possible.
+
+### Option 1 – Dynamic Allocation
+
+Allocate workspaces whenever needed.
+
+Example:
+
+```text id="d6a2"
+Workspace Created
+       ↓
+Allocate Memory
+       ↓
+Store Workspace
+```
+
+Advantages:
+
+* Flexible
+* Supports unlimited workspaces
+
+Disadvantages:
+
+* More complex
+* Memory management required
+* Cleanup logic required
+
+---
+
+### Option 2 – Static Storage
+
+Allocate a fixed number of workspaces at boot.
+
+Example:
+
+```text id="d6a3"
+Workspace 0
+Workspace 1
+Workspace 2
+...
+Workspace N
+```
+
+Advantages:
+
+* Simple
+* Fast access
+* No memory cleanup required
+
+Disadvantages:
+
+* Fixed size
+
+---
+
+## Choosing Simplicity
+
+At this stage of the project, simplicity was more important than flexibility.
+
+I decided to use static allocation.
+
+This meant AION would maintain a fixed workspace table inside kernel memory.
+
+---
+
+## Defining Workspace Capacity
+
+The next question was:
+
+> How many workspaces should AION support?
+
+Since the project was still in its early stages, I chose a fixed limit.
+
+Something similar to:
+
+```c id="d6a4"
+#define AION_MAX_WORKSPACES 8
+```
+
+The exact number was less important than establishing the mechanism.
+
+The purpose was to prove the concept.
+
+The limit could always be expanded later.
+
+---
+
+## Creating the Workspace Table
+
+With the limit defined, I created the first real storage structure inside:
+
+```text id="d6a5"
+kernel/aion/aion_workspace.c
+```
+
+The implementation looked conceptually like:
+
+```c id="d6a6"
+static struct aion_workspace
+workspaces[AION_MAX_WORKSPACES];
+```
+
+For the first time, AION had actual state.
+
+The operating system could now store multiple workspaces simultaneously.
+
+This was a major milestone.
+
+---
+
+## Understanding Static Kernel Memory
+
+Today's work forced me to learn more about memory inside the Linux kernel.
+
+Unlike normal applications, kernel memory behaves differently.
+
+The workspace table would:
+
+```text id="d6a7"
+Exist During Boot
+Remain During Runtime
+Exist Until Shutdown
+```
+
+This made it ideal for storing system-wide security information.
+
+The workspace table effectively became AION's internal database.
+
+---
+
+## Building the First Workspace Manager
+
+With storage available, I started thinking about management operations.
+
+Questions began appearing:
+
+```text id="d6a8"
+How do workspaces get initialized?
+
+How do processes join a workspace?
+
+How do we count processes?
+
+How do we retrieve trust levels?
+```
+
+Today's goal was not to solve all of these problems.
+
+Instead, I focused on building the foundation required to solve them later.
+
+---
+
+## The First Compilation
+
+Once the workspace table was implemented, I rebuilt the kernel.
+
+At this point I had become more comfortable with the build process.
+
+Still, every kernel compilation carried some level of anxiety.
+
+A small mistake could break the build.
+
+Fortunately, the compilation succeeded.
+
+This confirmed:
+
+* Workspace structures were valid
+* Workspace storage compiled correctly
+* AION remained integrated with Linux
+
+---
+
+## A Shift in Mindset
+
+One thing I noticed today was how my perspective was changing.
+
+Earlier in the project, I was thinking mostly about features.
+
+Today I was thinking more about infrastructure.
+
+Features like:
+
+```text id="d6a9"
+Trust Management
+Isolation
+Auditing
+Monitoring
+```
+
+would eventually depend on the workspace table.
+
+Without reliable storage, none of those systems could exist.
+
+This taught me an important engineering lesson:
+
+> Infrastructure usually comes before functionality.
+
+---
+
+## Thinking About Performance
+
+Another interesting consideration emerged.
+
+Because workspaces were stored in an array, access became extremely efficient.
+
+Example:
+
+```text id="d6a10"
+Workspace 0
+Workspace 1
+Workspace 2
+```
+
+could be accessed directly through indexing.
+
+No searching.
+
+No tree traversal.
+
+No linked lists.
+
+Just:
+
+```c id="d6a11"
+workspaces[id]
+```
+
+This simplicity would later make security checks very fast.
+
+---
+
+## Challenges Faced
+
+The biggest challenge today was understanding the tradeoff between flexibility and simplicity.
+
+Initially I wanted a highly dynamic system.
+
+However, I eventually realized that a simple static design was easier to implement, easier to debug, and more than sufficient for an experimental security framework.
+
+Choosing the simpler design accelerated development significantly.
+
+---
+
+## What I Learned
+
+Today's biggest lesson was:
+
+> Data structures become operating system infrastructure.
+
+The workspace table was not a feature.
+
+It was the platform on which future features would be built.
+
+I also gained a deeper understanding of:
+
+* Static kernel memory
+* Global kernel objects
+* Workspace storage design
+* Scalability considerations
+
+---
+
+## Why Today Matters
+
+Today was the first day that AION could actually store workspaces.
+
+Before today:
+
+```text id="d6a12"
+Workspace = Structure Definition
+```
+
+After today:
+
+```text id="d6a13"
+Workspace = Real Object In Memory
+```
+
+That distinction is enormous.
+
+The system now had somewhere to keep security information.
+
+Future features would finally have data to operate on.
+
+---
+
+## Progress Today
+
+✅ Defined maximum workspace capacity
+
+✅ Implemented workspace table
+
+✅ Added static workspace storage
+
+✅ Integrated storage into AION subsystem
+
+✅ Successfully rebuilt kernel
+
+✅ Established foundation for workspace management
+
+---
+
+## Key Learning
+
+A good security framework begins with reliable state management.
+
+Before enforcing policies, the operating system must have a place to store the information those policies depend on.
+
+---
+
+## Tomorrow's Goal
+
+Implement workspace initialization and bring the workspace table to life by assigning IDs, trust levels, and default values during system startup.

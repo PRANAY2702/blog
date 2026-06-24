@@ -1,0 +1,296 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 2"
+date:   2026-06-04 12:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 2 – Building and Booting My First Custom Linux Kernel
+
+After spending the previous day understanding the Linux source tree and defining the vision for AION, it was finally time to interact directly with the operating system.
+
+Today's objective was simple on paper but intimidating in practice:
+
+> Successfully compile and boot my own Linux kernel.
+
+This was the point where the project would move from theory to reality.
+
+Until now, I had only explored the source code. Today I would attempt to transform that source code into a functioning operating system.
+
+---
+
+## Preparing the Build Environment
+
+The first task was setting up the tools required to compile Linux.
+
+Unlike normal application development, kernel compilation requires a large collection of development tools and libraries.
+
+I spent time installing and verifying dependencies such as:
+
+```text id="6n7fdf"
+gcc
+make
+binutils
+flex
+bison
+openssl
+elfutils
+```
+
+Initially I underestimated how many components were involved.
+
+The Linux kernel is one of the largest software projects in existence, and compiling it requires a much more sophisticated build environment than a typical application.
+
+Once the dependencies were installed, I was ready to begin.
+
+---
+
+## Understanding the Build Process
+
+Before running any commands, I wanted to understand what was actually happening during compilation.
+
+I learned that Linux uses a specialized build system known as:
+
+```text id="70g7xe"
+Kbuild
+```
+
+Kbuild automatically manages:
+
+* Source files
+* Dependencies
+* Architecture-specific code
+* Kernel configuration
+
+This was my first exposure to a large-scale build system.
+
+Unlike application development, where a build may involve a few source files, the kernel build process coordinates thousands of files across multiple subsystems.
+
+---
+
+## The First Compilation Attempt
+
+With everything prepared, I finally launched the build.
+
+The command was:
+
+```bash id="w42s2k"
+make -j$(nproc)
+```
+
+The terminal immediately filled with output.
+
+File after file began compiling.
+
+At first, it felt exciting.
+
+Then it became slightly terrifying.
+
+The screen scrolled so quickly that I could barely read the output.
+
+My virtual machine's CPU usage shot to nearly 100%.
+
+For the next several minutes, all I could do was watch and wait.
+
+---
+
+## Realizing the Scale of Linux
+
+During compilation I gained a new appreciation for the complexity of modern operating systems.
+
+The kernel was compiling code from:
+
+```text id="0j6m0q"
+Process Management
+Memory Management
+Filesystems
+Networking
+Device Drivers
+Security Modules
+Architecture Code
+```
+
+Even though I was only interested in building AION later, every subsystem had to compile successfully.
+
+This reinforced an important lesson:
+
+> Kernel development means understanding how your code fits into a much larger ecosystem.
+
+---
+
+## The First Successful Build
+
+After what felt like an eternity, the compilation completed successfully.
+
+Seeing the build finish without errors was a major milestone.
+
+At that moment I realized:
+
+I was no longer just reading Linux source code.
+
+I had successfully built an operating system.
+
+Although AION did not exist yet, I now possessed something incredibly valuable:
+
+A working custom kernel.
+
+---
+
+## Installing the Kernel
+
+The next step was making the system capable of booting the newly compiled kernel.
+
+I installed the generated artifacts and updated the bootloader configuration.
+
+This process created files such as:
+
+```text id="mbm2p6"
+vmlinuz
+System.map
+initramfs
+```
+
+For the first time, my virtual machine contained multiple kernels.
+
+This was important because it provided a recovery path.
+
+If my custom kernel failed to boot in the future, I could always return to the original Ubuntu kernel.
+
+That safety net would become extremely valuable later in the project.
+
+---
+
+## The Most Stressful Reboot So Far
+
+Once the kernel was installed, there was only one thing left to do.
+
+Reboot.
+
+This was the moment of truth.
+
+If something had gone wrong during compilation or installation, the system might not boot.
+
+Watching the bootloader appear felt surprisingly stressful.
+
+I selected my newly compiled kernel and waited.
+
+For a few moments, nothing happened.
+
+Then Linux started booting.
+
+The system reached the login screen successfully.
+
+The custom kernel worked.
+
+---
+
+## Verifying Success
+
+After logging in, I ran:
+
+```bash id="cxm5ux"
+uname -r
+```
+
+The output matched the kernel version I had just built.
+
+That single command confirmed everything:
+
+* The kernel compiled correctly.
+* The kernel installed correctly.
+* The system was actually running my custom build.
+
+This was one of the most satisfying moments of the entire project.
+
+---
+
+## Challenges Faced
+
+Today's challenges were mostly related to unfamiliarity.
+
+I encountered:
+
+* Confusing build messages
+* Long compile times
+* High CPU usage
+* Concerns about potential boot failures
+
+The biggest challenge, however, was psychological.
+
+Every kernel developer eventually experiences the fear of breaking the operating system.
+
+Today was my first encounter with that feeling.
+
+---
+
+## What I Learned
+
+The most important lesson from today was:
+
+> Building the Linux kernel is not magic.
+
+It is a structured process that becomes understandable once you learn the tools involved.
+
+I also learned:
+
+* How Linux is compiled
+* How kernels are installed
+* How bootloaders select kernels
+* How to safely test custom kernels using virtualization
+
+Most importantly, I proved that I could modify and rebuild the operating system itself.
+
+---
+
+## Why Today Matters
+
+Without a successful kernel build, AION could never exist.
+
+Every future feature would depend on the ability to:
+
+* Modify source code
+* Recompile the kernel
+* Install new builds
+* Test changes safely
+
+Today established that foundation.
+
+It transformed the project from an idea into an engineering effort.
+
+---
+
+## Progress Today
+
+- Installed kernel development dependencies
+
+- Learned the Linux build system
+
+- Successfully compiled Linux kernel
+
+- Installed custom kernel
+
+- Booted custom kernel successfully
+
+- Verified custom kernel execution
+
+---
+
+## Challenges Faced
+
+* Understanding the kernel build process
+* Managing long compilation times
+* Dealing with uncertainty during first boot
+
+---
+
+## Key Learning
+
+Compiling and booting a custom kernel is the gateway to operating system development.
+
+Once you can build the kernel, you can begin shaping the operating system itself.
+
+---
+
+## Tomorrow's Goal
+
+Dive into Linux process management and understand how the kernel represents running processes internally through `task_struct`.

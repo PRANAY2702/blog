@@ -1,0 +1,355 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 7"
+date:   2026-06-10 12:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 7 – Bringing Workspaces to Life
+
+After implementing the workspace table, AION finally had a place to store information.
+
+However, there was still a major problem.
+
+The workspace table existed, but it was empty.
+
+Every workspace contained uninitialized memory.
+
+There were no IDs.
+
+No trust levels.
+
+No process counts.
+
+In other words:
+
+> The workspace manager existed, but it had no workspaces to manage.
+
+Today's goal was to solve that problem by implementing workspace initialization.
+
+This was the day workspaces became real entities inside the operating system.
+
+---
+
+## Understanding the Problem
+
+The workspace table had been created as a static array:
+
+```c id="d7a1"
+workspaces[AION_MAX_WORKSPACES]
+```
+
+However, Linux does not automatically initialize custom security structures.
+
+When the kernel boots, AION needs to prepare every workspace.
+
+I needed a mechanism that would:
+
+* Assign workspace IDs
+* Initialize trust levels
+* Reset process counters
+* Prepare the workspace system before any process uses it
+
+Without initialization, the workspace table would contain garbage values.
+
+That would make every future security decision unreliable.
+
+---
+
+## Designing the Initialization Process
+
+I began designing a dedicated function:
+
+```c id="d7a2"
+aion_workspace_init()
+```
+
+Its purpose was simple.
+
+At boot time:
+
+```text id="d7a3"
+Workspace 0
+Workspace 1
+Workspace 2
+...
+```
+
+should be created automatically.
+
+Every workspace would start with known values.
+
+---
+
+## Defining Default Values
+
+The next question was:
+
+> What should a newly created workspace look like?
+
+After thinking through future requirements, I decided every workspace should begin with:
+
+```text id="d7a4"
+Workspace ID = workspace number
+Trust Level = default trust
+Process Count = 0
+```
+
+This ensured that every workspace started in a predictable state.
+
+Predictability is extremely important in operating system development.
+
+Uninitialized data often leads to difficult-to-debug problems.
+
+---
+
+## Implementing the Initialization Loop
+
+Inside:
+
+```text id="d7a5"
+kernel/aion/aion_workspace.c
+```
+
+I implemented a loop that iterated through every workspace.
+
+Conceptually:
+
+```text id="d7a6"
+for each workspace
+    assign ID
+    assign trust level
+    reset process count
+```
+
+This transformed the workspace table from raw memory into a structured security database.
+
+For the first time, AION could accurately represent multiple security domains.
+
+---
+
+## The First Real AION Logic
+
+Something felt different today.
+
+Previous days focused on:
+
+* Setup
+* Build systems
+* Structures
+* Storage
+
+Today was different.
+
+This was the first time AION performed actual work.
+
+The subsystem now had behavior.
+
+When initialized, AION actively prepared its own internal state.
+
+This was the moment where the project started feeling like a real operating system feature rather than a collection of files.
+
+---
+
+## Adding Visibility Through Kernel Logs
+
+One problem quickly became apparent.
+
+How could I verify initialization was actually happening?
+
+The workspace table exists entirely inside kernel memory.
+
+There is no graphical interface.
+
+No command-line tool.
+
+No dashboard.
+
+To solve this, I used kernel logging.
+
+I added messages similar to:
+
+```c id="d7a7"
+pr_info(...)
+```
+
+during initialization.
+
+The goal was to produce evidence that AION was running.
+
+---
+
+## Reading Kernel Messages
+
+After rebuilding and booting the kernel, I inspected kernel logs.
+
+Seeing AION-generated messages for the first time was surprisingly exciting.
+
+For the first time:
+
+```text id="d7a8"
+AION
+```
+
+appeared in Linux boot logs.
+
+This proved:
+
+* AION loaded successfully
+* Initialization executed correctly
+* The workspace system existed during boot
+
+That moment made the project feel real.
+
+---
+
+## Learning About Kernel Startup
+
+Today's implementation introduced me to another important concept:
+
+Kernel initialization.
+
+I began learning how Linux executes startup code.
+
+Questions I explored included:
+
+```text id="d7a9"
+When should AION initialize?
+
+How early should security structures be created?
+
+How does Linux run subsystem startup code?
+```
+
+Understanding kernel startup would become increasingly important as AION grew more complex.
+
+---
+
+## Thinking About Process Assignment
+
+While implementing initialization, I started thinking about future process management.
+
+Every process already contained:
+
+```c id="d7a10"
+workspace_id
+trust_level
+```
+
+The next challenge would eventually become:
+
+> How does a process become part of a workspace?
+
+Although I didn't solve that today, initialization made me realize that process assignment would be the next major milestone.
+
+---
+
+## First Signs of a Security Framework
+
+One interesting realization occurred while testing.
+
+For the first time, I could mentally visualize the future system:
+
+```text id="d7a11"
+Workspace 0
+ ├── Trust Level
+ ├── Process Count
+ └── Processes
+
+Workspace 1
+ ├── Trust Level
+ ├── Process Count
+ └── Processes
+```
+
+The architecture was beginning to emerge.
+
+The pieces were finally starting to connect.
+
+---
+
+## Challenges Faced
+
+Today's biggest challenge was not implementation.
+
+It was verification.
+
+Kernel code often operates invisibly.
+
+Unlike application development, there is no immediate visual feedback.
+
+Learning how to use kernel logging effectively became an important skill.
+
+Without logging, debugging would have been nearly impossible.
+
+---
+
+## What I Learned
+
+Today's most important lesson was:
+
+> Initialization code determines whether a system is reliable.
+
+Even perfectly designed structures become useless if they start with invalid data.
+
+I also learned:
+
+* How kernel subsystems initialize themselves
+* How to verify behavior through kernel logs
+* The importance of deterministic startup state
+
+---
+
+## Why Today Matters
+
+Before today:
+
+```text id="d7a12"
+Workspace Table Exists
+```
+
+After today:
+
+```text id="d7a13"
+Workspace Table Exists
++
+Workspaces Are Initialized
++
+AION Runs During Boot
+```
+
+This was a huge step forward.
+
+AION was no longer passive storage.
+
+It had become an active subsystem.
+
+---
+
+## Progress Today
+
+- Implemented `aion_workspace_init()`
+
+- Assigned workspace IDs
+
+- Initialized trust levels
+
+- Reset process counters
+
+- Added kernel logging
+
+- Verified initialization during boot
+
+---
+
+## Key Learning
+
+A security framework is only as reliable as its initialization process.
+
+Correct startup behavior is the foundation upon which every future feature depends.
+
+---
+
+## Tomorrow's Goal
+
+Implement process registration and process counting so that workspaces can begin tracking membership and activity inside the operating system.

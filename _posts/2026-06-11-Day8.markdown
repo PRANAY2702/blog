@@ -1,0 +1,409 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 8"
+date:   2026-06-11 12:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 8 – Teaching AION to Track Processes
+
+After implementing workspace initialization, AION finally had a functioning workspace manager.
+
+When the kernel booted:
+
+* Workspaces existed
+* Trust levels existed
+* IDs existed
+
+However, there was still a major limitation.
+
+The workspaces were empty.
+
+AION had no idea which processes belonged to which workspace.
+
+In other words:
+
+> The operating system could create workspaces, but it could not track membership.
+
+Today's goal was to solve that problem.
+
+I wanted AION to know how many processes existed inside each workspace.
+
+This would be the first step toward process isolation and security enforcement.
+
+---
+
+## Why Process Tracking Matters
+
+A workspace without processes is meaningless.
+
+The entire purpose of AION is to organize running processes into security domains.
+
+Without membership tracking:
+
+```text
+Workspace 0
+Workspace 1
+Workspace 2
+```
+
+are simply empty containers.
+
+For future features such as:
+
+* Process migration
+* Signal isolation
+* Trust enforcement
+* Auditing
+
+AION must know which processes belong to which workspace.
+
+That realization drove today's work.
+
+---
+
+## Designing Membership Tracking
+
+The first question I asked myself was:
+
+> How should AION know which processes belong to a workspace?
+
+Fortunately, I had already solved half of the problem earlier.
+
+Every Linux process now contained:
+
+```c
+workspace_id
+trust_level
+```
+
+inside:
+
+```text
+task_struct
+```
+
+This meant every process already knew its workspace.
+
+What was missing was the opposite relationship.
+
+Workspaces needed awareness of how many processes belonged to them.
+
+---
+
+## Keeping the Design Simple
+
+Initially I considered storing a full list of process references inside each workspace.
+
+Something like:
+
+```text
+Workspace 0
+ ├── PID 101
+ ├── PID 202
+ ├── PID 303
+```
+
+However, this introduced several problems.
+
+The kernel would need to:
+
+* Maintain process lists
+* Handle process termination
+* Remove dead processes
+* Prevent stale references
+
+That quickly became more complicated than necessary.
+
+I decided on a simpler approach.
+
+Instead of storing every process:
+
+```text
+Store Process Count Only
+```
+
+The workspace would simply know:
+
+```text
+Workspace 0 → 15 Processes
+Workspace 1 → 3 Processes
+Workspace 2 → 28 Processes
+```
+
+This provided useful information while avoiding unnecessary complexity.
+
+---
+
+## Implementing Process Registration
+
+I began implementing a new function:
+
+```c
+aion_workspace_register_process()
+```
+
+The purpose was straightforward.
+
+Whenever a process joins a workspace:
+
+```text
+Workspace Process Count++
+```
+
+Conceptually:
+
+```text
+Process Joins Workspace
+        ↓
+Increment Counter
+```
+
+This was the first operation that actively modified workspace state after initialization.
+
+---
+
+## Implementing Process Removal
+
+Membership tracking is incomplete if processes can only join.
+
+Eventually processes will:
+
+* Exit
+* Migrate
+* Change workspaces
+
+This means counts must decrease as well.
+
+To handle this, I implemented:
+
+```c
+aion_workspace_unregister_process()
+```
+
+Conceptually:
+
+```text
+Process Leaves Workspace
+        ↓
+Decrement Counter
+```
+
+Together, registration and unregistration created the first complete membership tracking system.
+
+---
+
+## Thinking About Future Migration
+
+While implementing these functions, I started thinking ahead.
+
+Soon I would build process migration.
+
+When a process moves:
+
+```text
+Workspace 0
+      ↓
+Workspace 1
+```
+
+the system would need to:
+
+```text
+Workspace 0 Count--
+Workspace 1 Count++
+```
+
+The functions created today would make that operation trivial.
+
+This reinforced an important engineering principle:
+
+> Small utility functions often enable larger features later.
+
+---
+
+## Adding Safety Checks
+
+One thing I learned quickly during kernel development is that assumptions are dangerous.
+
+A bad workspace ID could easily corrupt memory.
+
+To prevent this, I added validation checks.
+
+Examples:
+
+```text
+workspace_id < 0
+workspace_id >= AION_MAX_WORKSPACES
+```
+
+Invalid requests would simply be rejected.
+
+These checks might seem minor, but they are critical inside kernel code.
+
+A simple out-of-bounds access can crash the entire operating system.
+
+---
+
+## The First Real Workspace Activity
+
+For the first time, workspaces could now change over time.
+
+Before today:
+
+```text
+Workspace Count = Always Zero
+```
+
+After today:
+
+```text
+Workspace Count Changes Dynamically
+```
+
+This was a surprisingly important milestone.
+
+The workspace manager was becoming a living system rather than a static data structure.
+
+---
+
+## Debugging Through Kernel Logs
+
+As usual, verification was challenging.
+
+The process counters lived entirely inside kernel memory.
+
+There was no direct way to see them.
+
+To verify behavior, I once again relied on:
+
+```c
+pr_info()
+```
+
+and
+
+```c
+pr_debug()
+```
+
+messages.
+
+Watching the counters update correctly gave me confidence that the design was working.
+
+---
+
+## Learning About State Management
+
+Today's work taught me something that appears frequently in operating system development:
+
+> Maintaining state is harder than creating state.
+
+Creating a workspace table was relatively simple.
+
+Keeping it accurate over time requires careful updates whenever the system changes.
+
+This concept would appear repeatedly throughout the rest of the project.
+
+---
+
+## Seeing the Bigger Picture
+
+By the end of the day, I could finally visualize how AION would operate.
+
+A process would:
+
+```text
+Exist
+     ↓
+Belong to Workspace
+     ↓
+Increase Workspace Count
+     ↓
+Participate in Security Policies
+```
+
+The architecture was starting to feel coherent.
+
+The pieces no longer felt disconnected.
+
+---
+
+## Challenges Faced
+
+Today's biggest challenge was avoiding overengineering.
+
+I repeatedly found myself wanting to build complex process management features.
+
+However, focusing only on process counts kept the design clean and maintainable.
+
+That decision saved a significant amount of development effort.
+
+---
+
+## What I Learned
+
+Today's biggest lesson was:
+
+> Track only the information you actually need.
+
+Process counts provided useful visibility without introducing the complexity of maintaining process lists.
+
+I also gained a deeper understanding of:
+
+* State management
+* Membership tracking
+* Defensive programming
+* Kernel validation logic
+
+---
+
+## Why Today Matters
+
+Before today:
+
+```text
+Workspace Exists
+```
+
+After today:
+
+```text
+Workspace Exists
++
+Workspace Tracks Membership
+```
+
+This was the first step toward turning workspaces into real security domains.
+
+Future features would now have meaningful information to operate on.
+
+---
+
+## Progress Today
+
+- Implemented process registration
+
+- Implemented process unregistration
+
+- Added workspace membership tracking
+
+- Added validation checks
+
+- Verified counter updates
+
+- Prepared foundation for process migration
+
+---
+
+## Key Learning
+
+A security framework must maintain accurate state before it can make reliable decisions.
+
+Membership tracking is one of the first building blocks of that state.
+
+---
+
+## Tomorrow's Goal
+
+Complete the first version of `aion_workspace.c` by implementing workspace statistics, trust retrieval, and debugging functions that allow AION to inspect and report workspace information.
