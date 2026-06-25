@@ -1,0 +1,289 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 14–15 "
+date:   2026-06-23 15:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 14-15 – Making AION Observable with a Workspace Monitoring Interface
+
+Over the past few days, AION had grown into a functional kernel security framework.
+
+The operating system could already:
+
+* Create isolated workspaces
+* Assign trust levels
+* Track running processes
+* Block unauthorized signals
+* Prevent unauthorized file modifications
+* Maintain an audit log of security events
+
+From a security perspective, everything was working.
+
+But there was one major problem.
+
+The information was trapped inside the kernel.
+
+As a developer—or a system administrator—I had no quick way to answer simple questions like:
+
+* How many workspaces are active?
+* How many processes belong to each workspace?
+* Which workspace has the highest trust level?
+* How many attacks has a workspace attempted?
+
+Today's objective was to solve that problem.
+
+> Build a real-time monitoring interface for AION.
+
+---
+
+# The Missing Piece
+
+Until now, verifying AION required multiple tools.
+
+For example:
+
+```text id="d14-1"
+Kernel logs
+Audit logs
+Manual testing
+Debug prints
+```
+
+This approach quickly became inconvenient.
+
+As the framework continued to grow, debugging every feature manually would become increasingly difficult.
+
+I wanted a single place where administrators could inspect the current state of AION.
+
+---
+
+# Leveraging the Linux proc Filesystem
+
+Linux already provides an elegant mechanism for exporting kernel information.
+
+The `/proc` filesystem exposes runtime data directly from the kernel.
+
+Examples include:
+
+```text id="d14-2"
+/proc/cpuinfo
+/proc/meminfo
+/proc/stat
+```
+
+Since AION is a kernel subsystem, exposing workspace information through `/proc` felt like the natural design choice.
+
+I created:
+
+```text id="d14-3"
+/proc/aion_workspace
+```
+
+This would become the primary monitoring interface for the framework.
+
+---
+
+# Designing the Dashboard
+
+The next question was:
+
+> What information should each workspace expose?
+
+I wanted the interface to remain concise while still providing meaningful operational insight.
+
+Each workspace would display:
+
+* Workspace ID
+* Trust Level
+* Number of Active Processes
+* Number of Blocked Signal Attempts
+* Number of Blocked File Write Attempts
+
+Together, these fields summarize both the state and security posture of a workspace.
+
+---
+
+# Adding Security Metrics
+
+During earlier development, I had implemented counters that recorded policy violations.
+
+Whenever AION denied a signal between workspaces:
+
+```text id="d14-4"
+Workspace A
+      │
+kill -9
+      ▼
+Workspace B
+```
+
+the framework would:
+
+* Deny the request
+* Record an audit entry
+* Increment the blocked signal counter
+
+Similarly, whenever an untrusted workspace attempted to modify a protected system file:
+
+```text id="d14-5"
+echo test >> /etc/hosts
+```
+
+AION would:
+
+* Block the write
+* Record the event in the audit log
+* Increment the blocked write counter
+
+Instead of leaving these metrics buried inside kernel memory, I decided to expose them through the monitoring interface.
+
+---
+
+# Implementing the Interface
+
+Using Linux's `seq_file` API, I iterated through every workspace and printed its current state.
+
+Conceptually, the interface performs:
+
+```text id="d14-6"
+For each workspace
+
+Print Workspace ID
+Print Trust Level
+Print Process Count
+Print Blocked Signals
+Print Blocked Writes
+```
+
+Although the implementation itself was relatively small, it dramatically improved the usability of the framework.
+
+---
+
+# The First Dashboard
+
+For the first time, executing:
+
+```bash id="d14-7"
+cat /proc/aion_workspace
+```
+
+produced something like:
+
+```text id="d14-8"
+WS=0 TRUST=50 PROCESSES=95 BLOCKED_SIGNALS=0 BLOCKED_WRITES=0
+
+WS=1 TRUST=90 PROCESSES=3 BLOCKED_SIGNALS=6 BLOCKED_WRITES=2
+```
+
+Seeing live workspace statistics directly from the kernel was one of the most satisfying moments of the project.
+
+Instead of wondering what AION was doing internally, I could now inspect its state instantly.
+
+---
+
+# Validating the Framework
+
+With the dashboard complete, I began testing every major feature.
+
+### Process Migration
+
+Moving a process from one workspace to another immediately updated the process count.
+
+### Trust Management
+
+Changing a workspace's trust level was reflected in real time.
+
+### Signal Isolation
+
+Attempting to send unauthorized signals incremented the blocked signal counter.
+
+### File Protection
+
+Attempting to modify protected files increased the blocked write counter.
+
+Watching every metric update correctly confirmed that the monitoring interface accurately reflected the internal state of the framework.
+
+---
+
+# Why Observability Matters
+
+One realization stood out during today's work.
+
+Blocking attacks is only part of a security system's job.
+
+Administrators also need answers to questions like:
+
+* Which workspace is behaving suspiciously?
+* Are policy violations increasing?
+* Is a particular workspace repeatedly attempting restricted operations?
+
+Without metrics, those questions are difficult to answer.
+
+With a monitoring interface, the operating system becomes significantly easier to manage.
+
+This is why modern production systems invest heavily in observability.
+
+---
+
+# Challenges Faced
+
+The hardest part of today's implementation was deciding what information **not** to expose.
+
+It would have been easy to display dozens of internal values.
+
+Instead, I focused on a small set of metrics that provide immediate operational value while leaving room for future expansion.
+
+---
+
+# What I Learned
+
+Today's biggest lesson was:
+
+> Security is only useful when it is observable.
+
+A kernel can enforce excellent security policies, but without visibility, diagnosing problems becomes unnecessarily difficult.
+
+The monitoring interface transformed AION from a collection of security mechanisms into a system that can be inspected, measured, and understood.
+
+---
+
+# Progress Today
+
+- Implemented `/proc/aion_workspace`
+
+- Displayed workspace IDs
+
+- Displayed trust levels
+
+- Displayed process counts
+
+- Added blocked signal statistics
+
+- Added blocked file-write statistics
+
+- Validated all workspace metrics through testing
+
+---
+
+# Key Learning
+
+Observability is a fundamental part of systems engineering.
+
+A well-designed operating system should not only enforce security policies but also provide clear visibility into how those policies behave during runtime.
+
+---
+
+# Looking Ahead
+
+With the monitoring interface complete, AION now has:
+
+* A dedicated kernel subsystem
+* Workspace management
+* Trust-aware process isolation
+* Signal protection
+* File-write protection
+* Audit logging
+* A real-time administrative dashboard
+
+The next phase will focus on making workspaces even smarter by introducing **resource accounting**, **dynamic policy management**, and richer administrative capabilities that move AION closer to a production-quality workspace-oriented operating system.
