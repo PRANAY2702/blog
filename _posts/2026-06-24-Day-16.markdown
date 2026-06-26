@@ -1,0 +1,316 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 16"
+date:   2026-06-24 15:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 16 — Adding Live Resource Accounting to AION
+
+## Introduction
+
+Until now, AION was capable of managing workspaces, assigning processes, enforcing trust levels, blocking signals, auditing file writes, and exposing workspace information through `/proc`.
+
+However, the operating system still lacked one of the most important capabilities of any modern OS:
+
+> **Resource monitoring.**
+
+An operating system should not only isolate processes—it should also understand **how much CPU and memory each isolated environment consumes.**
+
+Today's goal was to transform AION from a policy engine into a monitoring-aware operating system.
+
+---
+
+# The Objective
+
+Every workspace should maintain live statistics such as:
+
+* Workspace ID
+* Trust Level
+* Number of Processes
+* Memory Consumption
+* CPU Usage
+* Blocked Signals
+* Blocked Writes
+
+Ultimately, reading
+
+```bash
+cat /proc/aion_workspace
+```
+
+should provide a real-time dashboard describing the current state of every workspace.
+
+---
+
+# Extending the Workspace Structure
+
+The first step was extending the internal workspace structure.
+
+Previously it stored only:
+
+* Workspace ID
+* Trust Level
+* Process Count
+
+Two new fields were introduced:
+
+```c
+unsigned long total_memory;
+u64 total_cpu_time;
+```
+
+These allow every workspace to accumulate resource usage.
+
+The updated structure now became:
+
+```text
+Workspace
+├── ID
+├── Trust Level
+├── Process Count
+├── Blocked Signals
+├── Blocked Writes
+├── Total Memory
+└── Total CPU Time
+```
+
+---
+
+# Creating a Refresh Mechanism
+
+Instead of continuously updating counters every scheduler tick, AION follows an **on-demand accounting model**.
+
+Whenever someone executes
+
+```bash
+cat /proc/aion_workspace
+```
+
+the kernel refreshes the statistics before printing them.
+
+This approach has several advantages:
+
+* Minimal runtime overhead
+* No scheduler modifications
+* Easier debugging
+* Cleaner implementation
+* Always reports current values
+
+The refresh function begins by clearing all previously accumulated values.
+
+```text
+for every workspace
+    memory = 0
+    cpu = 0
+```
+
+This guarantees every refresh starts from a clean state.
+
+---
+
+# Walking Every Process
+
+The Linux kernel already maintains a linked list of every process.
+
+Using
+
+```c
+for_each_process(task)
+```
+
+AION walks through every running task.
+
+For each task:
+
+1. Read its workspace ID.
+2. Ignore invalid workspaces.
+3. Accumulate statistics into the corresponding workspace.
+
+Conceptually:
+
+```text
+Process
+      │
+      ▼
+Workspace ID
+      │
+      ▼
+Workspace Statistics
+```
+
+---
+
+# Memory Accounting
+
+Each process owns an `mm_struct` describing its address space.
+
+If a process has a valid memory descriptor,
+
+```c
+task->mm
+```
+
+AION calculates its resident memory using
+
+```c
+get_mm_rss(task->mm)
+```
+
+Since RSS is returned in pages, it is converted into bytes by shifting with
+
+```text
+PAGE_SHIFT
+```
+
+The value is then accumulated into the owning workspace.
+
+As a result, every workspace now reports total resident memory consumption.
+
+---
+
+# CPU Accounting
+
+CPU usage was implemented using process accounting already maintained by Linux.
+
+For each process:
+
+```c
+task->utime + task->stime
+```
+
+is added to the workspace.
+
+This represents
+
+* User mode execution time
+* Kernel mode execution time
+
+summed across every process inside the workspace.
+
+---
+
+# Updating the Monitoring Interface
+
+The `/proc/aion_workspace` interface now refreshes statistics before printing.
+
+Every read therefore performs:
+
+```text
+Reset Statistics
+        ↓
+Iterate Processes
+        ↓
+Accumulate CPU
+        ↓
+Accumulate Memory
+        ↓
+Display Dashboard
+```
+
+No background threads are required.
+
+---
+
+# Final Output
+
+After rebooting, reading
+
+```bash
+cat /proc/aion_workspace
+```
+
+produced output similar to:
+
+```text
+WS=0 TRUST=50 PROCESSES=780
+MEM=2810096KB
+CPU=...
+BLOCKED_SIGNALS=0
+BLOCKED_WRITES=0
+```
+
+For the first time, AION was capable of reporting live resource consumption for every workspace.
+
+---
+
+# A Debugging Challenge
+
+During development the custom kernel unexpectedly booted into emergency mode.
+
+Initial investigation suggested an AION bug.
+
+However, kernel logs revealed:
+
+```
+Failed to insert module
+BTF: Invalid name
+```
+
+The actual problem was unrelated to AION.
+
+The kernel had been built with
+
+```
+CONFIG_DEBUG_INFO_BTF=y
+CONFIG_DEBUG_INFO_BTF_MODULES=y
+```
+
+which caused module validation failures.
+
+Disabling BTF module generation, rebuilding the kernel, reinstalling modules, regenerating the initramfs, and updating GRUB resolved the issue.
+
+This debugging session reinforced an important lesson:
+
+> Not every failure introduced during kernel development originates from the code that was just written.
+
+Sometimes the build configuration itself becomes the root cause.
+
+---
+
+# Lessons Learned
+
+Today's work introduced several important Linux kernel concepts:
+
+* Process iteration with `for_each_process()`
+* Memory accounting using `mm_struct`
+* Resident Set Size (RSS)
+* CPU accounting through task statistics
+* Dynamic `/proc` interfaces
+* On-demand kernel monitoring
+* Debugging boot failures caused by kernel configuration
+
+---
+
+# Current AION Capabilities
+
+At the end of Day 15, AION now supports:
+
+* Workspace management
+* Process isolation
+* Trust levels
+* Signal protection
+* File write auditing
+* Audit logging
+* Workspace monitoring
+* Live memory accounting
+* Live CPU accounting
+
+The operating system has now evolved beyond enforcing policies—it can also observe and report system behavior.
+
+---
+
+# Looking Ahead
+
+With live monitoring complete, the next milestone is turning AION into a more intelligent operating system.
+
+Upcoming work includes:
+
+* Human-readable CPU time formatting
+* Workspace statistics resets
+* Per-workspace process listings
+* Runtime trust management
+* Resource limits
+* Automatic policy enforcement based on workspace behavior
+
+Day 15 marks the transition of AION from a security-focused kernel extension into a monitoring-aware operating system.
