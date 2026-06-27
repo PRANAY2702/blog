@@ -1,0 +1,386 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 17"
+date:   2026-06-25 15:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 17 — Building AION's Adaptive Trust Engine
+
+## Introduction
+
+Up until this point, AION assigned trust levels manually.
+
+Every workspace had a trust score, but that score remained static unless explicitly modified by the administrator.
+
+This meant the operating system could enforce policies, but it could not **adapt** to the behavior of running applications.
+
+Today's objective was to change that.
+
+The goal was to transform AION from a passive security system into an operating system capable of **observing behavior, evaluating risk, and automatically responding**.
+
+This marks the beginning of AION's policy engine.
+
+---
+
+# The Problem
+
+Imagine two workspaces.
+
+Workspace A continuously attempts to:
+
+* Send unauthorized signals
+* Perform restricted file writes
+* Violate isolation policies
+
+Workspace B behaves normally.
+
+Previously, both workspaces would continue operating with exactly the same trust level.
+
+The operating system had no memory of previous violations.
+
+A real operating system should instead recognize repeated violations and gradually reduce the amount of trust granted to the offending workspace.
+
+---
+
+# Designing the Policy Engine
+
+The first design decision was defining how trust should evolve.
+
+Instead of allowing arbitrary modifications, AION now evaluates trust based on security events.
+
+Current policy:
+
+```text
+Every 5 blocked events
+        ↓
+Decrease trust by 10
+```
+
+Minimum trust:
+
+```text
+10
+```
+
+Maximum trust remains whatever the workspace currently has.
+
+Importantly, trust should never increase automatically.
+
+Only administrators should be allowed to restore trust.
+
+---
+
+# Implementing Trust Evaluation
+
+A new function was introduced:
+
+```c
+void aion_workspace_evaluate_trust(int workspace_id);
+```
+
+Its responsibility is simple.
+
+For the specified workspace it:
+
+1. Counts blocked signals.
+2. Counts blocked writes.
+3. Calculates the total number of violations.
+4. Computes the trust penalty.
+5. Updates the workspace trust level if necessary.
+
+Conceptually:
+
+```text
+Blocked Signals
+        │
+Blocked Writes
+        │
+        ▼
+Total Security Events
+        │
+        ▼
+Penalty Calculation
+        │
+        ▼
+Updated Trust Level
+```
+
+---
+
+# Computing the Penalty
+
+The policy engine uses both blocked signals and blocked writes.
+
+```
+events =
+blocked_signals +
+blocked_writes
+```
+
+Penalty:
+
+```
+(events / 5) × 10
+```
+
+Rather than recalculating trust from a fixed value every time, AION now performs incremental reductions.
+
+```
+new_trust = old_trust - penalty
+```
+
+The value is clamped so that trust never falls below:
+
+```
+10
+```
+
+This prevents a workspace from reaching invalid or negative trust values.
+
+---
+
+# Integrating with Signal Protection
+
+Previously, when an illegal signal was detected, AION simply rejected the operation.
+
+Now the flow becomes:
+
+```text
+Illegal Signal
+        │
+        ▼
+Increment Blocked Signal Counter
+        │
+        ▼
+Evaluate Trust
+        │
+        ▼
+Possibly Reduce Trust
+```
+
+Every denied signal now contributes to the long-term security reputation of the workspace.
+
+---
+
+# Integrating with File Write Protection
+
+The same mechanism was added to the file protection subsystem.
+
+Whenever AION blocks an unauthorized write:
+
+```text
+Blocked Write
+        │
+        ▼
+Increment Counter
+        │
+        ▼
+Evaluate Trust
+```
+
+The policy engine therefore reacts to multiple kinds of violations rather than only one.
+
+---
+
+# Auditing Trust Changes
+
+Automatically changing security policy without leaving evidence would be a serious design flaw.
+
+To solve this, a new audit event was introduced.
+
+Whenever trust changes, AION records:
+
+```text
+AUTO_TRUST_CHANGE
+```
+
+along with
+
+* Workspace ID
+* Previous Trust
+* Updated Trust
+* Total Events
+
+Example:
+
+```text
+AUTO_TRUST_CHANGE
+ws=0
+old=50
+new=40
+events=5
+```
+
+The audit log now records not only blocked operations but also the operating system's decisions.
+
+---
+
+# Discovering an Interesting Bug
+
+The first implementation calculated trust using:
+
+```
+100 - penalty
+```
+
+During testing, something unexpected happened.
+
+The audit log showed:
+
+```text
+old=50
+new=100
+```
+
+Instead of reducing trust, the operating system restored it.
+
+The problem was obvious after reviewing the formula.
+
+Every evaluation recalculated trust from an absolute value rather than from the workspace's existing trust.
+
+The implementation was changed to:
+
+```
+new_trust = old_trust - penalty
+```
+
+Additionally, trust updates are now performed only when:
+
+```
+new_trust < old_trust
+```
+
+This guarantees that trust can only decrease automatically.
+
+Increasing trust remains an administrative decision.
+
+---
+
+# Testing the Policy Engine
+
+Testing followed a realistic scenario.
+
+1. A new process was moved into Workspace 1.
+2. The current shell remained in Workspace 0.
+3. Multiple unauthorized kill requests were issued.
+4. Every request was denied by AION.
+
+After five denied attempts:
+
+```
+Blocked Signals = 5
+```
+
+The workspace dashboard reported:
+
+```text
+TRUST = 40
+```
+
+The audit log simultaneously recorded:
+
+```text
+AUTO_TRUST_CHANGE
+ws=0
+old=50
+new=40
+events=5
+```
+
+The operating system had successfully observed repeated violations and adapted its security policy accordingly.
+
+---
+
+# Current Policy Flow
+
+AION now operates as follows:
+
+```text
+Application
+
+        │
+
+Attempts Restricted Action
+
+        │
+
+Policy Enforcement
+
+        │
+
+Violation Detected
+
+        │
+
+Increment Security Counter
+
+        │
+
+Evaluate Trust
+
+        │
+
+Trust Reduced
+
+        │
+
+Audit Event Generated
+
+        │
+
+Updated Security State
+```
+
+For the first time, the operating system is no longer reacting only to individual system calls.
+
+It is reacting to **behavior over time**.
+
+---
+
+# What Was Accomplished
+
+Day 17 introduced:
+
+* Automatic trust evaluation
+* Dynamic trust reduction
+* Incremental penalty calculation
+* Minimum trust enforcement
+* Integration with signal protection
+* Integration with write protection
+* Automatic audit logging
+* Adaptive workspace security
+
+---
+
+# Lessons Learned
+
+Today's work introduced an important operating system principle.
+
+Modern operating systems rarely rely on static security decisions.
+
+Instead, they continuously observe system behavior and adjust policies based on accumulated evidence.
+
+Although AION's trust engine is intentionally simple, it demonstrates the same architectural concept used by modern endpoint security platforms and adaptive access-control systems.
+
+The project has now evolved beyond enforcing fixed rules.
+
+It has become capable of **learning from runtime behavior and modifying its own security posture**.
+
+---
+
+# Looking Ahead
+
+With adaptive trust complete, the next milestone is making AION easier to operate.
+
+Upcoming work includes:
+
+* Runtime policy management through `/proc`
+* Workspace reset operations
+* Administrative control commands
+* Better monitoring interface
+* Final code cleanup
+* Performance optimization
+* End-to-end demonstrations
+
+Day 17 marks the transition of AION from a policy-enforcing operating system into an **adaptive security operating system** capable of observing, evaluating, and responding to the behavior of running workloads.

@@ -284,7 +284,7 @@ Today's work introduced several important Linux kernel concepts:
 
 # Current AION Capabilities
 
-At the end of Day 15, AION now supports:
+At the end of Day 16, AION now supports:
 
 * Workspace management
 * Process isolation
@@ -313,4 +313,4 @@ Upcoming work includes:
 * Resource limits
 * Automatic policy enforcement based on workspace behavior
 
-Day 15 marks the transition of AION from a security-focused kernel extension into a monitoring-aware operating system.
+Day 16 marks the transition of AION from a security-focused kernel extension into a monitoring-aware operating system.
