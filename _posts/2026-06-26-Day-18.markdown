@@ -1,0 +1,117 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 18"
+date:   2026-06-26 15:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+
+# Day 18 – Building the AION Management Layer
+
+## Overview
+
+Today AION evolved from being a kernel subsystem into a manageable operating system. Until now, the kernel exposed workspace information through `/proc`, but there was no centralized way to administer workspaces during runtime.
+
+Today's goal was to build a complete runtime management interface.
+
+---
+
+## Workspace Administration
+
+I expanded `/proc/aion_control` into the primary management interface for the operating system.
+
+New commands include:
+
+- Move a process to another workspace
+- Change workspace trust
+- Reset workspace
+- Display information for a specific workspace
+- Display all workspaces
+
+Example:
+
+```bash
+echo "move 7142 1" > /proc/aion_control
+echo "trust 1 80" > /proc/aion_control
+echo "reset 1" > /proc/aion_control
+echo "info 1" > /proc/aion_control
+echo "list" > /proc/aion_control
+```
+
+This gives AION a runtime administration model similar to other Linux management interfaces.
+
+---
+
+## Workspace Information
+
+I redesigned `/proc/aion_workspace` to provide much richer runtime information.
+
+Each workspace now reports:
+
+- Trust level
+- Process count
+- Memory consumption
+- CPU usage
+- Blocked signals
+- Blocked writes
+
+Example:
+
+```text
+WS=0 TRUST=40 PROCESSES=789 MEM=2664MB CPU=18m BLOCKED_SIGNALS=5 BLOCKED_WRITES=0
+```
+
+---
+
+## Detailed Workspace View
+
+A new **info** mode allows inspection of a single workspace.
+
+Instead of viewing every workspace, administrators can focus on one.
+
+```text
+====================================
+AION Workspace 0
+====================================
+
+Trust Level      : 40
+Processes        : 789
+Memory Usage     : 2664 MB
+CPU Time         : 18 minutes
+Blocked Signals  : 5
+Blocked Writes   : 0
+====================================
+```
+
+---
+
+## Reset Support
+
+A reset command now restores a workspace back to its default state.
+
+Reset clears:
+
+- Blocked signal counters
+- Blocked write counters
+- Trust level
+
+Every reset is recorded by the audit subsystem.
+
+---
+
+## Lessons Learned
+
+Today's work focused less on kernel hooks and more on operating system management.
+
+I learned:
+
+- Designing runtime administration interfaces
+- Building kernel control APIs
+- Exposing kernel functionality through `/proc`
+- Improving usability for system administrators
+
+---
+
+## Progress
+
+AION now provides both monitoring and administration completely from userspace.

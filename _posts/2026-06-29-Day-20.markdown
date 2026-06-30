@@ -1,0 +1,130 @@
+---
+layout: post
+title:  "AION OS Development Log – Day 20"
+date:   2026-06-29 15:00:00 +0530
+categories:  Kernel , shell
+tags: [ kernel, shell , os]
+---
+# Day 20 – Building AION Security Center
+
+## Overview
+
+Up until now, AION existed entirely inside the Linux kernel.
+
+Today I began building its userspace management application.
+
+The goal is to provide administrators with a professional interface for interacting with the operating system.
+
+---
+
+## Project Structure
+
+Instead of writing everything inside one file, I structured the application like a real C++ project.
+
+```text
+AION Security Center
+
+include/
+src/
+assets/
+build/
+
+CMakeLists.txt
+```
+
+The application separates:
+
+- Dashboard
+- Kernel communication
+- Workspace models
+- Control interface
+
+This architecture improves maintainability and scalability.
+
+---
+
+## Kernel Communication
+
+The application communicates with AION through:
+
+```text
+/proc/aion_workspace
+/proc/aion_control
+/proc/aion_audit
+```
+
+This mirrors how many Linux utilities communicate with the kernel.
+
+---
+
+## Workspace Parser
+
+A parser converts `/proc` output into C++ objects.
+
+Instead of processing strings everywhere, the dashboard works with structured `Workspace` objects.
+
+This significantly simplifies future development.
+
+---
+
+## Dashboard
+
+Using the FTXUI library, I created the first version of the **AION Security Center** dashboard.
+
+The dashboard displays:
+
+- Workspace State
+- Health
+- Trust
+- CPU usage
+- Memory usage
+- Process count
+- Uptime
+
+Color coding and progress bars make the interface significantly easier to read.
+
+---
+
+## Live Refresh
+
+The dashboard now refreshes automatically, allowing administrators to observe workspace state changes in real time.
+
+This transforms the application from a static report into a live monitoring tool.
+
+---
+
+## Lessons Learned
+
+Today's work shifted from kernel engineering to systems software engineering.
+
+Key topics included:
+
+- Modern C++ project organization
+- CMake
+- Object-oriented design
+- Parsing kernel interfaces
+- Terminal User Interface (TUI) development using FTXUI
+- Layered software architecture
+
+---
+
+## Current State of AION
+
+After nineteen days of development, AION now includes:
+
+- Workspace management
+- Adaptive trust engine
+- Signal isolation
+- File write protection
+- CPU accounting
+- Memory accounting
+- Health scoring
+- Workspace state
+- Workspace uptime
+- Audit subsystem
+- Runtime administration
+- Interactive userspace management console
+
+The project has evolved from a collection of kernel modifications into a complete operating system prototype with both kernel and userspace components.
+
+The next phase focuses on transforming the management console into a fully interactive terminal application with live dashboards, keyboard shortcuts, and real-time workspace administration.
